@@ -1,23 +1,41 @@
 #![allow(unused_variables)]
-use actix_web::{web, App, HttpServer, HttpResponse};
+use actix_web::{web, get, App, HttpServer, HttpResponse, HttpRequest};
 use rustls::ServerConfig;
 use rustls::Certificate;
 use rustls_pemfile::pkcs8_private_keys;
 use rustls_pemfile::certs;
 use std::fs::File;
 use std::io::BufReader;
+use serde::Deserialize;
 
-async fn index(req: actix_web::HttpRequest) -> HttpResponse {
-    println!("~");
-    //println!("Method: {:?}", req.method());
-    //println!("Host: {:?}", req.head().uri.host());
-    //println!("Path: {:?}", req.path());
-    dbg!(&req);
-
-    HttpResponse::Ok().body("OK")
+#[derive(Debug, Deserialize)]
+struct Alive {
+    mac: String,
+    ip: String,
+    errcnt: u32,
+    errcode: u32,
+    errstr: String,
+    access: String,
+    speed: u32,
+    total_down: u32,
+    game_down: u32,
+    process_num: i32,
+    OS_Phys: i32,
+    OS_Virtual: i32,
+    AP_Phys: i32,
+    AP_Virtual: i32,
+    SV_Phys: i32,
+    SV_Virtual: i32,
+    free_space: i32,
+    uptime: String,
+    ver: String,
+    libver: String,
+    game_hash: String,
 }
 
-async fn certify(info: web::Path<(String, String, String, String, String)>) -> HttpResponse {
+
+async fn certify(req: HttpRequest, info: web::Path<(String, String, String, String, String)>) -> HttpResponse {
+    let id:u32 = req.match_info().query("user_id").parse().unwrap();
     let (gid, mac, r, md, cn) = info.into_inner(); // not used
     println!("CERTIFY REQUEST");
     // Will be read in as a string of length 1040 bytes 
@@ -29,15 +47,36 @@ async fn certify(info: web::Path<(String, String, String, String, String)>) -> H
     HttpResponse::Ok().body(res)
 }
 
-
-async fn alive(info: web::Path<(String,)>) -> HttpResponse {
+#[get("/alive/{id}/alive.txt")]
+async fn alive(info: web::Path<(String,)>, query: web::Query<Alive>) -> String {
+    dbg!(&query);
+    //let (mac, ip, errcnt, errcode, errstr, access, speed, total_down, game_down, process_num, OS_Phys, OS_Virtual, AP_Phys, AP_Virtual, SV_Phys, SV_Virtual, free_space, uptime, ver, libver, game_hash) = query.into_inner();
     println!("ALIVE REQUEST");
     if info.0 == "303801" {
-        return HttpResponse::Ok().body("");
+        return "1".to_string()
     }
-    HttpResponse::Ok().body("Unsupported game.")
+    "0".to_string()
 }
 
+async fn fire_alert(info: web::Query<(u32, String, u32, u32)>) -> HttpResponse {
+    println!("FireAlert REQUEST");
+    let (game_id, mac_addr, tick_count, status) = info.into_inner();
+
+    // Perform actions based on the passed in parameters
+
+    // Return a response
+    HttpResponse::Ok().body("OK")
+}
+
+async fn index(req: actix_web::HttpRequest) -> HttpResponse {
+    println!("~");
+    //println!("Method: {:?}", req.method());
+    //println!("Host: {:?}", req.head().uri.host());
+    //println!("Path: {:?}", req.path());
+    dbg!(&req);
+
+    HttpResponse::Ok().body("OK")
+}
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -58,7 +97,8 @@ async fn main() -> std::io::Result<()> {
         .expect("bad certificate/key");
     HttpServer::new(|| {
         App::new()
-            .route("/alive/{id}/alive.txt", web::get().to(alive))
+            .service(alive)
+            .route("/server/FireAlert.php", web::get().to(fire_alert))
             .route("/server/certify.php", web::get().to(certify))
             .route("{path:.*}", web::get().to(index))
     })
