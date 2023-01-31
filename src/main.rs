@@ -1,9 +1,9 @@
 #![allow(unused_variables)]
-use actix_web::{web, get, App, HttpServer, HttpResponse, HttpRequest};
-use rustls::ServerConfig;
-use rustls::Certificate;
-use rustls_pemfile::pkcs8_private_keys;
-use rustls_pemfile::certs;
+#![allow(non_snake_case)]
+#![allow(dead_code)]
+use actix_web::{web, get, App, HttpServer, HttpResponse, HttpRequest, http::{header::{ContentType, HeaderValue}, StatusCode}};
+use rustls::{ServerConfig, Certificate};
+use rustls_pemfile::{pkcs8_private_keys, certs};
 use std::fs::File;
 use std::io::BufReader;
 use serde::Deserialize;
@@ -33,7 +33,6 @@ struct Alive {
     game_hash: String,
 }
 
-
 async fn certify(req: HttpRequest, info: web::Path<(String, String, String, String, String)>) -> HttpResponse {
     let id:u32 = req.match_info().query("user_id").parse().unwrap();
     let (gid, mac, r, md, cn) = info.into_inner(); // not used
@@ -42,20 +41,23 @@ async fn certify(req: HttpRequest, info: web::Path<(String, String, String, Stri
     // Can use = or : (it will use both)
     // if error is in the body, it will break and return an error
     // Probably used for tracking / telemetry... we don't care about that right now lmao
-    let res = format!("host=\ncard_id=7020392000147361,relay_addr=localhost,relay_port=80\nno=1337\nname=123\npref=nesys\naddr=nesys@home\nx-next-time=15\nx-img=http://localhost/news.png\nx-ranking=http://localhost/ranking.php\nticket=123456")
-;
+    let res = format!("host=\ncard_id=7020392000147361,relay_addr=localhost,relay_port=80\nno=1337\nname=123\npref=nesys\naddr=nesys@home\nx-next-time=15\nx-img=http://localhost/news.png\nx-ranking=http://localhost/ranking.php\nticket=123456");
     HttpResponse::Ok().body(res)
 }
 
-#[get("/alive/{id}/alive.txt")]
-async fn alive(info: web::Path<(String,)>, query: web::Query<Alive>) -> String {
-    dbg!(&query);
+#[get("/alive/{id}/Alive.txt")]
+async fn alive(info: web::Path<(String,)>, _query: web::Query<Alive>) -> HttpResponse {
     //let (mac, ip, errcnt, errcode, errstr, access, speed, total_down, game_down, process_num, OS_Phys, OS_Virtual, AP_Phys, AP_Virtual, SV_Phys, SV_Virtual, free_space, uptime, ver, libver, game_hash) = query.into_inner();
     println!("ALIVE REQUEST");
+    /*
     if info.0 == "303801" {
-        return "1".to_string()
+        return "".to_string()
     }
-    "0".to_string()
+    "".to_string()*/
+    HttpResponse::Ok()
+        .append_header(ContentType(mime::TEXT_PLAIN))
+        .append_header(("Connection", "keep-alive"))
+        .finish()
 }
 
 async fn fire_alert(info: web::Query<(u32, String, u32, u32)>) -> HttpResponse {
