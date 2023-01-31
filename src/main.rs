@@ -85,9 +85,9 @@ async fn main() -> std::io::Result<()> {
     println!("Starting!!!");
     // Load key files
     let cert_file = &mut BufReader::new(
-        File::open("out_server.crt").unwrap());
+        File::open("cert.pem").unwrap());
     let key_file = &mut BufReader::new(
-        File::open("rootCA.key").unwrap());
+        File::open("key.pem").unwrap());
 
     // Parse the certificate and set it in the configuration
     let cert_chain = certs(cert_file).unwrap();
