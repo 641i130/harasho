@@ -1,12 +1,16 @@
 #![allow(unused_variables)]
 #![allow(non_snake_case)]
 #![allow(dead_code)]
-use actix_web::{web, get, App, HttpServer, HttpResponse, HttpRequest, http::{header::{ContentType, HeaderValue}, StatusCode}};
-use rustls::{ServerConfig, Certificate};
-use rustls_pemfile::{pkcs8_private_keys, certs};
+use actix_web::{
+    get,
+    http::{header::ContentType, StatusCode},
+    web, App, HttpRequest, HttpResponse, HttpServer,
+};
+use rustls::{Certificate, ServerConfig};
+use rustls_pemfile::{certs, pkcs8_private_keys};
+use serde::Deserialize;
 use std::fs::File;
 use std::io::BufReader;
-use serde::Deserialize;
 
 #[derive(Debug, Deserialize)]
 struct Alive {
@@ -34,14 +38,15 @@ struct Alive {
 }
 
 async fn certify(req: HttpRequest, info: web::Path<(String, String, String, String, String)>) -> HttpResponse {
-    let id:u32 = req.match_info().query("user_id").parse().unwrap();
+    let id: u32 = req.match_info().query("user_id").parse().unwrap();
     let (gid, mac, r, md, cn) = info.into_inner(); // not used
     println!("CERTIFY REQUEST");
-    // Will be read in as a string of length 1040 bytes 
+    // Will be read in as a string of length 1040 bytes
     // Can use = or : (it will use both)
     // if error is in the body, it will break and return an error
     // Probably used for tracking / telemetry... we don't care about that right now lmao
-    let res = format!("host=\ncard_id=7020392000147361,relay_addr=localhost,relay_port=80\nno=1337\nname=123\npref=nesys\naddr=nesys@home\nx-next-time=15\nx-img=http://localhost/news.png\nx-ranking=http://localhost/ranking.php\nticket=123456");
+    let res =
+        format!("host=\ncard_id=7020392000147361,relay_addr=localhost,relay_port=80\nno=1337\nname=123\npref=nesys\naddr=nesys@home\nx-next-time=15\nx-img=http://localhost/news.png\nx-ranking=http://localhost/ranking.php\nticket=123456");
     HttpResponse::Ok().body(res)
 }
 
@@ -54,10 +59,7 @@ async fn alive(info: web::Path<(String,)>, _query: web::Query<Alive>) -> HttpRes
         return "".to_string()
     }
     "".to_string()*/
-    HttpResponse::Ok()
-        .append_header(ContentType(mime::TEXT_PLAIN))
-        .append_header(("Connection", "keep-alive"))
-        .finish()
+    HttpResponse::Ok().append_header(ContentType(mime::TEXT_PLAIN)).append_header(("Connection", "keep-alive")).finish()
 }
 
 async fn fire_alert(info: web::Query<(u32, String, u32, u32)>) -> HttpResponse {
@@ -84,10 +86,8 @@ async fn index(req: actix_web::HttpRequest) -> HttpResponse {
 async fn main() -> std::io::Result<()> {
     println!("Starting!!!");
     // Load key files
-    let cert_file = &mut BufReader::new(
-        File::open("cert.pem").unwrap());
-    let key_file = &mut BufReader::new(
-        File::open("key.pem").unwrap());
+    let cert_file = &mut BufReader::new(File::open("cert.pem").unwrap());
+    let key_file = &mut BufReader::new(File::open("key.pem").unwrap());
 
     // Parse the certificate and set it in the configuration
     let cert_chain = certs(cert_file).unwrap();
@@ -109,3 +109,4 @@ async fn main() -> std::io::Result<()> {
     .run()
     .await
 }
+
