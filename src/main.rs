@@ -102,10 +102,22 @@ async fn main() -> std::io::Result<()> {
     env_logger::init_from_env(env_logger::Env::new().default_filter_or("info"));
     let config = load_rustls_config();
     info!("Certificates loaded.");
-    HttpServer::new(|| App::new().service(alive).service(fire_alert).service(certify).route("{path:.*}", web::get().to(index)))
-        .bind("127.0.0.1:80")?
-        .bind("127.0.0.1:5107")?
-        .bind_rustls("0.0.0.0:443", config)?
-        .run()
-        .await
+    HttpServer::new(|| {
+        App::new()
+            .service(alive)
+            .service(alive_i)
+            .service(respone)
+            .service(fire_alert)
+            .service(cursel)
+            .service(gameinfo)
+            .service(certify)
+            .service(server_data)
+            .service(basicinfo)
+            .route("{path:.*}", web::get().to(index))
+    })
+    .bind("127.0.0.1:80")?
+    .bind("127.0.0.1:5107")?
+    .bind_rustls("0.0.0.0:443", config)?
+    .run()
+    .await
 }
