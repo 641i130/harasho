@@ -1,7 +1,9 @@
 #![allow(unused_variables)]
 #![allow(non_snake_case)]
 #![allow(dead_code)]
+#![allow(unused_imports)]
 use actix_web::{get, http::header::ContentType, web, App, HttpRequest, HttpResponse, HttpServer};
+use log::{debug, error, info, log_enabled, Level};
 use rustls::{Certificate, PrivateKey, ServerConfig};
 use rustls_pemfile::{certs, pkcs8_private_keys};
 use serde::Deserialize;
@@ -83,8 +85,8 @@ fn load_rustls_config() -> rustls::ServerConfig {
     let config = ServerConfig::builder().with_safe_defaults().with_no_client_auth();
 
     // load TLS key/cert files
-    let cert_file = &mut BufReader::new(File::open("./certs/cert.pem").unwrap());
-    let key_file = &mut BufReader::new(File::open("./certs/key.pem").unwrap());
+    let cert_file = &mut BufReader::new(File::open("./certs/nesica1.csr").unwrap());
+    let key_file = &mut BufReader::new(File::open("./certs/nesica1.key").unwrap());
 
     // convert files to key/cert objects
     let cert_chain = certs(cert_file).unwrap().into_iter().map(Certificate).collect();
@@ -101,8 +103,9 @@ fn load_rustls_config() -> rustls::ServerConfig {
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    println!("Starting!!!");
+    env_logger::init_from_env(env_logger::Env::new().default_filter_or("info"));
     let config = load_rustls_config();
+    info!("Certificates loaded.");
     HttpServer::new(|| {
         App::new()
             .service(alive)
