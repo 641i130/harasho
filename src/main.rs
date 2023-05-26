@@ -1,3 +1,5 @@
+//! Restart PC and see if installed certs work
+//! get rid of HTTP cert issue in access logs
 #![allow(unused_variables)]
 #![allow(non_snake_case)]
 #![allow(dead_code)]
@@ -13,57 +15,57 @@ use std::io::BufReader;
 #[get("/alive/{id}/Alive.txt")]
 async fn alive() -> HttpResponse {
     println!("ALIVE REQUEST");
-    HttpResponse::Ok().body("")
+    HttpResponse::Ok().append_header(ContentType(mime::TEXT_PLAIN)).body("")
 }
 
 #[get("/alive/i.php")]
 async fn alive_i() -> HttpResponse {
-    HttpResponse::Ok().body("REMOTE ADDRESS:10.3.0.53\nSERVER NAME:LLSIFAC\nSERVER ADDR:10.3.0.53")
+    HttpResponse::Ok().append_header(ContentType(mime::TEXT_PLAIN)).body("REMOTE ADDRESS:10.3.0.53\nSERVER NAME:LLSIFAC\nSERVER ADDR:10.3.0.53")
 }
 
 #[post("/service/respone/respone.php")]
 async fn respone() -> HttpResponse {
-    HttpResponse::Ok().body("1")
+    HttpResponse::Ok().append_header(ContentType(mime::TEXT_PLAIN)).body("1")
 }
 #[get("/server/FireAlert.php")]
 async fn fire_alert() -> HttpResponse {
-    HttpResponse::Ok().body("OK")
+    HttpResponse::Ok().append_header(ContentType(mime::TEXT_PLAIN)).body("OK")
 }
 
 #[get("/server/cursel.php")]
 async fn cursel() -> HttpResponse {
-    HttpResponse::Ok().body("1\n")
+    HttpResponse::Ok().append_header(ContentType(mime::TEXT_PLAIN)).body("1\n")
 }
 
 #[get("/server/gameinfo.php")]
 async fn gameinfo() -> HttpResponse {
-    HttpResponse::Ok().body("0\n3\n301000,test1\n302000,test2\n303000,test3\n")
+    HttpResponse::Ok().append_header(ContentType(mime::TEXT_PLAIN)).body("0\n3\n301000,test1\n302000,test2\n303000,test3\n")
 }
 
 #[get("/server/certify.php")]
 async fn certify() -> HttpResponse {
     let res = format!(
-        r#"host=http://10.3.0.53
-        no=1337
-        name=LLServer
-        pref=nesys
-        addr=Local
-        x-next-time=15
-        x-img=https://static.wikia.nocookie.net/houkai-star-rail/images/1/18/Character_March_7th_Splash_Art.png
-        x-ranking=http://10.3.0.53/ranking/ranking.php
-        ticket=9251859b560b33b031516d05c2ef3c28%"#
+        "host=http://10.3.0.53
+no=1337
+name=LLServer
+pref=nesys
+addr=Local
+x-next-time=15
+x-img=https://static.wikia.nocookie.net/houkai-star-rail/images/1/18/Character_March_7th_Splash_Art.png
+x-ranking=http://10.3.0.53/ranking/ranking.php
+ticket=9251859b560b33b031516d05c2ef3c28"
     );
-    HttpResponse::Ok().body(res)
+    HttpResponse::Ok().append_header(ContentType(mime::TEXT_PLAIN)).append_header(ContentType(mime::TEXT_PLAIN)).body(res)
 }
 
 #[get("/server/data.php")]
 async fn server_data() -> HttpResponse {
-    HttpResponse::Ok().body("count=0\nnexttime=0\n")
+    HttpResponse::Ok().append_header(ContentType(mime::TEXT_PLAIN)).body("count=0\nnexttime=0\n")
 }
 
 #[post("/basicinfo")]
 async fn basicinfo() -> HttpResponse {
-    HttpResponse::Ok().body("Harder to do")
+    HttpResponse::Ok().append_header(ContentType(mime::TEXT_PLAIN)).body("Harder to do")
 }
 
 async fn index(req: actix_web::HttpRequest) -> HttpResponse {
@@ -72,8 +74,7 @@ async fn index(req: actix_web::HttpRequest) -> HttpResponse {
     //println!("Host: {:?}", req.head().uri.host());
     //println!("Path: {:?}", req.path());
     dbg!(&req);
-
-    HttpResponse::Ok().body("shit")
+    HttpResponse::Ok().append_header(ContentType(mime::TEXT_PLAIN)).body("shit")
 }
 
 fn load_rustls_config() -> rustls::ServerConfig {
