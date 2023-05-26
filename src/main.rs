@@ -1,12 +1,5 @@
-#![allow(unused_variables)]
-#![allow(non_snake_case)]
-#![allow(dead_code)]
-use actix_web::{
-    get,
-    http::{header::ContentType, StatusCode},
-    web, App, HttpRequest, HttpResponse, HttpServer,
-};
-use rustls::{Certificate, ServerConfig};
+use actix_web::{get, http::header::ContentType, web, App, HttpRequest, HttpResponse, HttpServer};
+use rustls::{Certificate, PrivateKey, ServerConfig};
 use rustls_pemfile::{certs, pkcs8_private_keys};
 use serde::Deserialize;
 use std::fs::File;
@@ -38,8 +31,8 @@ struct Alive {
 }
 
 async fn certify(req: HttpRequest, info: web::Path<(String, String, String, String, String)>) -> HttpResponse {
-    let id: u32 = req.match_info().query("user_id").parse().unwrap();
-    let (gid, mac, r, md, cn) = info.into_inner(); // not used
+    let _id: u32 = req.match_info().query("user_id").parse().unwrap();
+    let (_gid, _mac, _r, _md, _cn) = info.into_inner(); // not used
     println!("CERTIFY REQUEST");
     // Will be read in as a string of length 1040 bytes
     // Can use = or : (it will use both)
@@ -51,7 +44,7 @@ async fn certify(req: HttpRequest, info: web::Path<(String, String, String, Stri
 }
 
 #[get("/alive/{id}/Alive.txt")]
-async fn alive(info: web::Path<(String,)>, _query: web::Query<Alive>) -> HttpResponse {
+async fn alive(_info: web::Path<(String,)>, _query: web::Query<Alive>) -> HttpResponse {
     //let (mac, ip, errcnt, errcode, errstr, access, speed, total_down, game_down, process_num, OS_Phys, OS_Virtual, AP_Phys, AP_Virtual, SV_Phys, SV_Virtual, free_space, uptime, ver, libver, game_hash) = query.into_inner();
     println!("ALIVE REQUEST");
     /*
@@ -64,7 +57,7 @@ async fn alive(info: web::Path<(String,)>, _query: web::Query<Alive>) -> HttpRes
 
 async fn fire_alert(info: web::Query<(u32, String, u32, u32)>) -> HttpResponse {
     println!("FireAlert REQUEST");
-    let (game_id, mac_addr, tick_count, status) = info.into_inner();
+    let (_game_id, _mac_addr, _tick_count, _status) = info.into_inner();
 
     // Perform actions based on the passed in parameters
 
@@ -82,21 +75,31 @@ async fn index(req: actix_web::HttpRequest) -> HttpResponse {
     HttpResponse::Ok().body("OK")
 }
 
+fn load_rustls_config() -> rustls::ServerConfig {
+    // init server config builder with safe defaults
+    let config = ServerConfig::builder().with_safe_defaults().with_no_client_auth();
+
+    // load TLS key/cert files
+    let cert_file = &mut BufReader::new(File::open("./certs/nesica1.pem").unwrap());
+    let key_file = &mut BufReader::new(File::open("./certs/nesica1.key").unwrap());
+
+    // convert files to key/cert objects
+    let cert_chain = certs(cert_file).unwrap().into_iter().map(Certificate).collect();
+    let mut keys: Vec<PrivateKey> = pkcs8_private_keys(key_file).unwrap().into_iter().map(PrivateKey).collect();
+
+    // exit if no keys could be parsed
+    if keys.is_empty() {
+        eprintln!("Could not locate PKCS 8 private keys.");
+        std::process::exit(1);
+    }
+
+    config.with_single_cert(cert_chain, keys.remove(0)).unwrap()
+}
+
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     println!("Starting!!!");
-    // Load key files
-    let cert_file = &mut BufReader::new(File::open("cert.pem").unwrap());
-    let key_file = &mut BufReader::new(File::open("key.pem").unwrap());
-
-    // Parse the certificate and set it in the configuration
-    let cert_chain = certs(cert_file).unwrap();
-    let mut keys = pkcs8_private_keys(key_file).unwrap();
-    let config = ServerConfig::builder()
-        .with_safe_defaults()
-        .with_no_client_auth()
-        .with_single_cert(vec![Certificate(cert_chain.into_iter().next().expect("Cert parsing error"))], rustls::PrivateKey(keys.remove(0)))
-        .expect("bad certificate/key");
+    let config = load_rustls_config();
     HttpServer::new(|| {
         App::new()
             .service(alive)
@@ -104,8 +107,8 @@ async fn main() -> std::io::Result<()> {
             .route("/server/certify.php", web::get().to(certify))
             .route("{path:.*}", web::get().to(index))
     })
-    .bind("127.0.0.1:80")?
-    .bind_rustls("127.0.0.1:443", config)?
+    //.bind("127.0.0.1:8000")?
+    .bind_rustls("0.0.0.0:33333", config)?
     .run()
     .await
 }
