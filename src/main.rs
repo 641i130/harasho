@@ -2,7 +2,7 @@
 #![allow(non_snake_case)]
 #![allow(dead_code)]
 #![allow(unused_imports)]
-use actix_web::{get, http::header::ContentType, web, App, HttpRequest, HttpResponse, HttpServer};
+use actix_web::{get, http::header::ContentType, post, web, App, HttpRequest, HttpResponse, HttpServer};
 use log::{debug, error, info, log_enabled, Level};
 use rustls::{Certificate, PrivateKey, ServerConfig};
 use rustls_pemfile::{certs, pkcs8_private_keys};
@@ -10,64 +10,60 @@ use serde::Deserialize;
 use std::fs::File;
 use std::io::BufReader;
 
-#[derive(Debug, Deserialize)]
-struct Alive {
-    mac: String,
-    ip: String,
-    errcnt: u32,
-    errcode: u32,
-    errstr: String,
-    access: String,
-    speed: u32,
-    total_down: u32,
-    game_down: u32,
-    process_num: i32,
-    OS_Phys: i32,
-    OS_Virtual: i32,
-    AP_Phys: i32,
-    AP_Virtual: i32,
-    SV_Phys: i32,
-    SV_Virtual: i32,
-    free_space: i32,
-    uptime: String,
-    ver: String,
-    libver: String,
-    game_hash: String,
+#[get("/alive/{id}/Alive.txt")]
+async fn alive() -> HttpResponse {
+    println!("ALIVE REQUEST");
+    HttpResponse::Ok().body("")
 }
 
-async fn certify(req: HttpRequest, info: web::Path<(String, String, String, String, String)>) -> HttpResponse {
-    let _id: u32 = req.match_info().query("user_id").parse().unwrap();
-    let (_gid, _mac, _r, _md, _cn) = info.into_inner(); // not used
-    println!("CERTIFY REQUEST");
-    // Will be read in as a string of length 1040 bytes
-    // Can use = or : (it will use both)
-    // if error is in the body, it will break and return an error
-    // Probably used for tracking / telemetry... we don't care about that right now lmao
-    let res =
-        format!("host=\ncard_id=7020392000147361,relay_addr=localhost,relay_port=80\nno=1337\nname=123\npref=nesys\naddr=nesys@home\nx-next-time=15\nx-img=http://localhost/news.png\nx-ranking=http://localhost/ranking.php\nticket=123456");
+#[get("/alive/i.php")]
+async fn alive_i() -> HttpResponse {
+    HttpResponse::Ok().body("REMOTE ADDRESS:10.3.0.53\nSERVER NAME:LLSIFAC\nSERVER ADDR:10.3.0.53")
+}
+
+#[post("/service/respone/respone.php")]
+async fn respone() -> HttpResponse {
+    HttpResponse::Ok().body("1")
+}
+#[get("/server/FireAlert.php")]
+async fn fire_alert() -> HttpResponse {
+    HttpResponse::Ok().body("OK")
+}
+
+#[get("/server/cursel.php")]
+async fn cursel() -> HttpResponse {
+    HttpResponse::Ok().body("1\n")
+}
+
+#[get("/server/gameinfo.php")]
+async fn gameinfo() -> HttpResponse {
+    HttpResponse::Ok().body("0\n3\n301000,test1\n302000,test2\n303000,test3\n")
+}
+
+#[get("/server/certify.php")]
+async fn certify() -> HttpResponse {
+    let res = format!(
+        r#"host=http://10.3.0.53
+        no=1337
+        name=LLServer
+        pref=nesys
+        addr=Local
+        x-next-time=15
+        x-img=https://static.wikia.nocookie.net/houkai-star-rail/images/1/18/Character_March_7th_Splash_Art.png
+        x-ranking=http://10.3.0.53/ranking/ranking.php
+        ticket=9251859b560b33b031516d05c2ef3c28%"#
+    );
     HttpResponse::Ok().body(res)
 }
 
-#[get("/alive/{id}/Alive.txt")]
-async fn alive(_info: web::Path<(String,)>, _query: web::Query<Alive>) -> HttpResponse {
-    //let (mac, ip, errcnt, errcode, errstr, access, speed, total_down, game_down, process_num, OS_Phys, OS_Virtual, AP_Phys, AP_Virtual, SV_Phys, SV_Virtual, free_space, uptime, ver, libver, game_hash) = query.into_inner();
-    println!("ALIVE REQUEST");
-    /*
-    if info.0 == "303801" {
-        return "".to_string()
-    }
-    "".to_string()*/
-    HttpResponse::Ok().append_header(ContentType(mime::TEXT_PLAIN)).append_header(("Connection", "keep-alive")).finish()
+#[get("/server/data.php")]
+async fn server_data() -> HttpResponse {
+    HttpResponse::Ok().body("count=0\nnexttime=0\n")
 }
 
-async fn fire_alert(info: web::Query<(u32, String, u32, u32)>) -> HttpResponse {
-    println!("FireAlert REQUEST");
-    let (_game_id, _mac_addr, _tick_count, _status) = info.into_inner();
-
-    // Perform actions based on the passed in parameters
-
-    // Return a response
-    HttpResponse::Ok().body("OK")
+#[post("/basicinfo")]
+async fn basicinfo() -> HttpResponse {
+    HttpResponse::Ok().body("Harder to do")
 }
 
 async fn index(req: actix_web::HttpRequest) -> HttpResponse {
@@ -77,7 +73,7 @@ async fn index(req: actix_web::HttpRequest) -> HttpResponse {
     //println!("Path: {:?}", req.path());
     dbg!(&req);
 
-    HttpResponse::Ok().body("OK")
+    HttpResponse::Ok().body("shit")
 }
 
 fn load_rustls_config() -> rustls::ServerConfig {
@@ -106,16 +102,10 @@ async fn main() -> std::io::Result<()> {
     env_logger::init_from_env(env_logger::Env::new().default_filter_or("info"));
     let config = load_rustls_config();
     info!("Certificates loaded.");
-    HttpServer::new(|| {
-        App::new()
-            .service(alive)
-            .route("/server/FireAlert.php", web::get().to(fire_alert))
-            .route("/server/certify.php", web::get().to(certify))
-            .route("{path:.*}", web::get().to(index))
-    })
-    .bind("127.0.0.1:80")?
-    .bind("127.0.0.1:5107")?
-    .bind_rustls("0.0.0.0:443", config)?
-    .run()
-    .await
+    HttpServer::new(|| App::new().service(alive).service(fire_alert).service(certify).route("{path:.*}", web::get().to(index)))
+        .bind("127.0.0.1:80")?
+        .bind("127.0.0.1:5107")?
+        .bind_rustls("0.0.0.0:443", config)?
+        .run()
+        .await
 }
