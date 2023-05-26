@@ -1,3 +1,6 @@
+#![allow(unused_variables)]
+#![allow(non_snake_case)]
+#![allow(dead_code)]
 use actix_web::{get, http::header::ContentType, web, App, HttpRequest, HttpResponse, HttpServer};
 use rustls::{Certificate, PrivateKey, ServerConfig};
 use rustls_pemfile::{certs, pkcs8_private_keys};
@@ -80,8 +83,8 @@ fn load_rustls_config() -> rustls::ServerConfig {
     let config = ServerConfig::builder().with_safe_defaults().with_no_client_auth();
 
     // load TLS key/cert files
-    let cert_file = &mut BufReader::new(File::open("./certs/nesica1.pem").unwrap());
-    let key_file = &mut BufReader::new(File::open("./certs/nesica1.key").unwrap());
+    let cert_file = &mut BufReader::new(File::open("./certs/cert.pem").unwrap());
+    let key_file = &mut BufReader::new(File::open("./certs/key.pem").unwrap());
 
     // convert files to key/cert objects
     let cert_chain = certs(cert_file).unwrap().into_iter().map(Certificate).collect();
@@ -107,9 +110,9 @@ async fn main() -> std::io::Result<()> {
             .route("/server/certify.php", web::get().to(certify))
             .route("{path:.*}", web::get().to(index))
     })
-    //.bind("127.0.0.1:8000")?
-    .bind_rustls("0.0.0.0:33333", config)?
+    .bind("127.0.0.1:80")?
+    .bind("127.0.0.1:5107")?
+    .bind_rustls("0.0.0.0:443", config)?
     .run()
     .await
 }
-

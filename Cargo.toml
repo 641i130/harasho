@@ -6,9 +6,12 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-actix-web = {version = "4.3.0", features = ["rustls"]}
+actix-tls = "3.0.3"
+actix-web = {version = "4.3.0", features = ["rustls","openssl"]}
+env_logger = "0.10.0"
 log = "0.4.17"
 mime = "0.3.16"
+openssl = "0.10.52"
 rustls = "0.20.8"
 rustls-pemfile = "1.0.2"
 serde = {version = "1.0.152", features = ["derive"]}
