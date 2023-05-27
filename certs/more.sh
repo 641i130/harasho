@@ -1,4 +1,6 @@
 #!/bin/bash
+echo "Don't run this unless you want new certs. Just use the ones already generated!"
+exit
 echo "This script removes all cert files in the directory."
 echo "Continue? Press enter!"
 read
