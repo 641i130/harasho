@@ -1,3 +1,3 @@
 # harasho
 
-A 'good' LLSIFASA (or LLAC) server emulator.
+A 'good' LLSIFAC (or LLSIFASA) server emulator for a certain arcade machine.
