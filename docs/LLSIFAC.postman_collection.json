@@ -6,7 +6,7 @@
 	},
 	"item": [
 		{
-			"name": "/alive/",
+			"name": "alive",
 			"item": [
 				{
 					"name": "Alive.txt",
@@ -147,7 +147,7 @@
 			]
 		},
 		{
-			"name": "/server/",
+			"name": "server",
 			"item": [
 				{
 					"name": "certify.php",
@@ -353,33 +353,157 @@
 			]
 		},
 		{
-			"name": "/service/",
+			"name": "service",
 			"item": [
 				{
-					"name": "respone.php",
-					"request": {
-						"method": "POST",
-						"header": [],
-						"url": {
-							"raw": "https://127.0.0.1/service/respone/respone.php",
-							"protocol": "https",
-							"host": [
-								"127",
-								"0",
-								"0",
-								"1"
-							],
-							"path": [
-								"service",
-								"respone",
-								"respone.php"
+					"name": "incom",
+					"item": [
+						{
+							"name": "incom.php",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "https://127.0.0.1/service/incom/incom.php",
+									"protocol": "https",
+									"host": [
+										"127",
+										"0",
+										"0",
+										"1"
+									],
+									"path": [
+										"service",
+										"incom",
+										"incom.php"
+									]
+								}
+							},
+							"response": [
+								{
+									"name": "incom.php",
+									"originalRequest": {
+										"method": "POST",
+										"header": [],
+										"url": {
+											"raw": "https://127.0.0.1/service/incom/incom.php",
+											"protocol": "https",
+											"host": [
+												"127",
+												"0",
+												"0",
+												"1"
+											],
+											"path": [
+												"service",
+												"incom",
+												"incom.php"
+											]
+										}
+									},
+									"status": "OK",
+									"code": 200,
+									"_postman_previewlanguage": "plain",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "text/plain; charset=utf-8"
+										},
+										{
+											"key": "Date",
+											"value": "Sat, 27 May 2023 04:19:15 GMT"
+										},
+										{
+											"key": "Server",
+											"value": "Kestrel"
+										},
+										{
+											"key": "Transfer-Encoding",
+											"value": "chunked"
+										}
+									],
+									"cookie": [],
+									"body": "1+1"
+								}
+							]
+						},
+						{
+							"name": "incomALL.php",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "https://127.0.0.1/service/incom/incomALL.php",
+									"protocol": "https",
+									"host": [
+										"127",
+										"0",
+										"0",
+										"1"
+									],
+									"path": [
+										"service",
+										"incom",
+										"incomALL.php"
+									]
+								}
+							},
+							"response": [
+								{
+									"name": "New Request",
+									"originalRequest": {
+										"method": "POST",
+										"header": [],
+										"url": {
+											"raw": "https://127.0.0.1/service/incom/incomALL.php",
+											"protocol": "https",
+											"host": [
+												"127",
+												"0",
+												"0",
+												"1"
+											],
+											"path": [
+												"service",
+												"incom",
+												"incomALL.php"
+											]
+										}
+									},
+									"status": "OK",
+									"code": 200,
+									"_postman_previewlanguage": "plain",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "text/plain; charset=utf-8"
+										},
+										{
+											"key": "Date",
+											"value": "Sat, 27 May 2023 04:19:38 GMT"
+										},
+										{
+											"key": "Server",
+											"value": "Kestrel"
+										},
+										{
+											"key": "Transfer-Encoding",
+											"value": "chunked"
+										}
+									],
+									"cookie": [],
+									"body": "1+1"
+								}
 							]
 						}
-					},
-					"response": [
+					]
+				},
+				{
+					"name": "respone",
+					"item": [
 						{
 							"name": "respone.php",
-							"originalRequest": {
+							"request": {
 								"method": "POST",
 								"header": [],
 								"url": {
@@ -398,36 +522,64 @@
 									]
 								}
 							},
-							"status": "OK",
-							"code": 200,
-							"_postman_previewlanguage": "plain",
-							"header": [
+							"response": [
 								{
-									"key": "Content-Type",
-									"value": "text/plain; charset=utf-8"
-								},
-								{
-									"key": "Date",
-									"value": "Sat, 27 May 2023 02:18:25 GMT"
-								},
-								{
-									"key": "Server",
-									"value": "Kestrel"
-								},
-								{
-									"key": "Transfer-Encoding",
-									"value": "chunked"
+									"name": "respone.php",
+									"originalRequest": {
+										"method": "POST",
+										"header": [],
+										"url": {
+											"raw": "https://127.0.0.1/service/respone/respone.php",
+											"protocol": "https",
+											"host": [
+												"127",
+												"0",
+												"0",
+												"1"
+											],
+											"path": [
+												"service",
+												"respone",
+												"respone.php"
+											]
+										}
+									},
+									"status": "OK",
+									"code": 200,
+									"_postman_previewlanguage": "plain",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "text/plain; charset=utf-8"
+										},
+										{
+											"key": "Date",
+											"value": "Sat, 27 May 2023 02:18:25 GMT"
+										},
+										{
+											"key": "Server",
+											"value": "Kestrel"
+										},
+										{
+											"key": "Transfer-Encoding",
+											"value": "chunked"
+										}
+									],
+									"cookie": [],
+									"body": "1"
 								}
-							],
-							"cookie": [],
-							"body": "1"
+							]
 						}
 					]
+				},
+				{
+					"name": "card",
+					"item": []
 				}
 			]
 		},
 		{
-			"name": "/game/",
+			"name": "game",
 			"item": [
 				{
 					"name": "info",
