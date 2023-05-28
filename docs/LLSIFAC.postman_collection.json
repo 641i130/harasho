@@ -574,7 +574,73 @@
 				},
 				{
 					"name": "card",
-					"item": []
+					"item": [
+						{
+							"name": "incomALL.php",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "https://127.0.0.1/service/card/incomALL.php",
+									"protocol": "https",
+									"host": [
+										"127",
+										"0",
+										"0",
+										"1"
+									],
+									"path": [
+										"service",
+										"card",
+										"incomALL.php"
+									]
+								}
+							},
+							"response": [
+								{
+									"name": "incomALL.php",
+									"originalRequest": {
+										"method": "POST",
+										"header": [],
+										"url": {
+											"raw": "https://127.0.0.1/service/card/incomALL.php",
+											"protocol": "https",
+											"host": [
+												"127",
+												"0",
+												"0",
+												"1"
+											],
+											"path": [
+												"service",
+												"card",
+												"incomALL.php"
+											]
+										}
+									},
+									"status": "OK",
+									"code": 200,
+									"_postman_previewlanguage": "plain",
+									"header": [
+										{
+											"key": "content-length",
+											"value": "3"
+										},
+										{
+											"key": "content-type",
+											"value": "text/plain"
+										},
+										{
+											"key": "date",
+											"value": "Sun, 28 May 2023 15:18:55 GMT"
+										}
+									],
+									"cookie": [],
+									"body": "1+1"
+								}
+							]
+						}
+					]
 				}
 			]
 		},
