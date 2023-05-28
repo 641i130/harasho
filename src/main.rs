@@ -12,34 +12,46 @@ use serde::Deserialize;
 use std::fs::File;
 use std::io::BufReader;
 
-#[get("/alive/{id}/Alive.txt")]
+#[macro_export]
+macro_rules! resp {
+    ($str:expr) => {
+        HttpResponse::Ok().append_header(ContentType(mime::TEXT_PLAIN)).body($str)
+    };
+}
+
+#[get("/alive/303807/Alive.txt")]
 async fn alive() -> HttpResponse {
-    println!("ALIVE REQUEST");
-    HttpResponse::Ok().append_header(ContentType(mime::TEXT_PLAIN)).body("")
+    resp!("")
 }
 
 #[get("/alive/i.php")]
 async fn alive_i() -> HttpResponse {
-    HttpResponse::Ok().append_header(ContentType(mime::TEXT_PLAIN)).body("REMOTE ADDRESS:10.3.0.53\nSERVER NAME:LLSIFAC\nSERVER ADDR:10.3.0.53")
+    resp!("REMOTE ADDRESS:10.3.0.53\nSERVER NAME:LLSIFAC\nSERVER ADDR:10.3.0.53")
+}
+
+#[post("/service/card/incomALL.php")]
+async fn incomALL() -> HttpResponse {
+    resp!("1+1")
 }
 
 #[post("/service/respone/respone.php")]
 async fn respone() -> HttpResponse {
-    HttpResponse::Ok().append_header(ContentType(mime::TEXT_PLAIN)).body("1")
+    resp!("1")
 }
+
 #[get("/server/FireAlert.php")]
 async fn fire_alert() -> HttpResponse {
-    HttpResponse::Ok().append_header(ContentType(mime::TEXT_PLAIN)).body("OK")
+    resp!("OK")
 }
 
 #[get("/server/cursel.php")]
 async fn cursel() -> HttpResponse {
-    HttpResponse::Ok().append_header(ContentType(mime::TEXT_PLAIN)).body("1\n")
+    resp!("1\n")
 }
 
 #[get("/server/gameinfo.php")]
 async fn gameinfo() -> HttpResponse {
-    HttpResponse::Ok().append_header(ContentType(mime::TEXT_PLAIN)).body("0\n3\n301000,test1\n302000,test2\n303000,test3\n")
+    resp!("0\n3\n301000,test1\n302000,test2\n303000,test3\n")
 }
 
 #[get("/server/certify.php")]
@@ -82,8 +94,8 @@ fn load_rustls_config() -> rustls::ServerConfig {
     let config = ServerConfig::builder().with_safe_defaults().with_no_client_auth();
 
     // load TLS key/cert files
-    let cert_file = &mut BufReader::new(File::open("./certs/nesica1.csr").unwrap());
-    let key_file = &mut BufReader::new(File::open("./certs/nesica1.key").unwrap());
+    let cert_file = &mut BufReader::new(File::open("./certs/nesica1.crt").expect("Certificate not found!"));
+    let key_file = &mut BufReader::new(File::open("./certs/nesica1.key").expect("Key not found!"));
 
     // convert files to key/cert objects
     let cert_chain = certs(cert_file).unwrap().into_iter().map(Certificate).collect();
@@ -107,6 +119,7 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .service(alive)
             .service(alive_i)
+            .service(incomALL)
             .service(respone)
             .service(fire_alert)
             .service(cursel)
