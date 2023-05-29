@@ -5,18 +5,48 @@
 #![allow(dead_code)]
 #![allow(unused_imports)]
 use actix_web::{get, http::header::ContentType, post, web, App, HttpRequest, HttpResponse, HttpServer};
+use aes::cipher::{AsyncStreamCipher, KeyIvInit};
 use log::{debug, error, info, log_enabled, Level};
 use rustls::{Certificate, PrivateKey, ServerConfig};
 use rustls_pemfile::{certs, pkcs8_private_keys};
-use serde::Deserialize;
+
+use serde::{Deserialize, Serialize};
 use std::fs::File;
 use std::io::BufReader;
+
+type Aes128CfbEnc = cfb_mode::Encryptor<aes::Aes128>;
+
+struct BasicInfo {
+    BaseUrl: String,
+    DownloadUrl: String,
+    Key: String,
+    Iv: String,
+    TenpoIndex: u8,
+}
 
 #[macro_export]
 macro_rules! resp {
     ($str:expr) => {
         HttpResponse::Ok().append_header(ContentType(mime::TEXT_PLAIN)).body($str)
     };
+}
+
+#[macro_export]
+macro_rules! print_valid_chars {
+    ($slice:expr) => {{
+        print!("{{{{");
+        let mut valid_chars = String::new();
+        for &byte in $slice {
+            if let Ok(chr) = std::str::from_utf8(&[byte]) {
+                if chr.is_ascii() && &byte >= &32 {
+                    valid_chars.push_str(chr);
+                }
+            } else {
+                valid_chars.push_str(".");
+            }
+        }
+        println!("{}}}}}", valid_chars);
+    }};
 }
 
 #[get("/alive/303807/Alive.txt")]
@@ -67,26 +97,45 @@ x-img=https://static.wikia.nocookie.net/houkai-star-rail/images/1/18/Character_M
 x-ranking=http://10.3.0.53/ranking/ranking.php
 ticket=9251859b560b33b031516d05c2ef3c28"
     );
-    HttpResponse::Ok().append_header(ContentType(mime::TEXT_PLAIN)).append_header(ContentType(mime::TEXT_PLAIN)).body(res)
+    resp!(res)
 }
 
 #[get("/server/data.php")]
 async fn server_data() -> HttpResponse {
-    HttpResponse::Ok().append_header(ContentType(mime::TEXT_PLAIN)).body("count=0\nnexttime=0\n")
+    resp!("count=0\nnexttime=0\n")
 }
 
 #[post("/basicinfo")]
 async fn basicinfo() -> HttpResponse {
-    HttpResponse::Ok().append_header(ContentType(mime::TEXT_PLAIN)).body("Harder to do")
+    // Encrypt or something first...
+    // Very possible PGP is needed I think/? or aes portion ... idk
+    resp!("Harder to do")
 }
 
 async fn index(req: actix_web::HttpRequest) -> HttpResponse {
-    println!("~");
-    //println!("Method: {:?}", req.method());
-    //println!("Host: {:?}", req.head().uri.host());
-    //println!("Path: {:?}", req.path());
+    println!("---");
+    println!("Method: {:?}", req.method());
+    println!("Host: {:?}", req.head().uri.host());
+    println!("Path: {:?}", req.path());
     dbg!(&req);
     HttpResponse::Ok().append_header(ContentType(mime::TEXT_PLAIN)).body("shit")
+}
+
+fn _aes_encrypt(_plaintext: String) {
+    // Create an instance of your JSON object
+    let data: MyData = MyData { name: "Alice".to_string(), age: 30 };
+    let plaintext: String = serde_json::to_string(&data).unwrap();
+    dbg!(&plaintext);
+    // Crypto constants
+    let key: &[u8] = "0123456789012345".as_bytes();
+    let iv: &[u8] = "0123456789012345".as_bytes();
+
+    // Encrypt
+    let mut ciphertext = plaintext.as_bytes().to_vec();
+    Aes128CfbEnc::new(key.into(), iv.into()).encrypt(&mut ciphertext);
+
+    // Print
+    print_valid_chars!(ciphertext.iter());
 }
 
 fn load_rustls_config() -> rustls::ServerConfig {

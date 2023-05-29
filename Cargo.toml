@@ -14,4 +14,7 @@ mime = "0.3.16"
 openssl = "0.10.52"
 rustls = "0.20.8"
 rustls-pemfile = "1.0.2"
-serde = {version = "1.0.152", features = ["derive"]}
+aes = "0.8.2"
+cfb-mode = "0.8.2"
+serde = {version="1.0.163",features = ['derive']}
+serde_json = {version = "1.0.96", features = ['std']}
