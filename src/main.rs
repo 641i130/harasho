@@ -16,12 +16,38 @@ use std::io::BufReader;
 
 type Aes128CfbEnc = cfb_mode::Encryptor<aes::Aes128>;
 
+#[derive(Serialize, Deserialize)]
 struct BasicInfo {
     BaseUrl: String,
     DownloadUrl: String,
     Key: String,
     Iv: String,
-    TenpoIndex: u8,
+    TenpoIndex: u16,
+}
+
+#[post("/basicinfo")]
+async fn basicinfo() -> HttpResponse {
+    // Encrypt or something first...
+    // Very possible PGP is needed I think/? or aes portion ... idk
+    let data: BasicInfo = BasicInfo {
+        BaseUrl: "http://10.3.0.53/game/info".to_string(),
+        DownloadUrl: "http://10.3.0.53/download".to_string(),
+        Key: "0123456789012345".to_string(),
+        Iv: "0123456789012345".to_string(),
+        TenpoIndex: 1337u16,
+    };
+    let plaintext: String = serde_json::to_string(&data).unwrap();
+
+    // Crypto constants
+    let key: &[u8] = "0123456789012345".as_bytes();
+    let iv: &[u8] = "0123456789012345".as_bytes();
+
+    // Encrypt
+    let mut ciphertext = plaintext.as_bytes().to_vec();
+    Aes128CfbEnc::new(key.into(), iv.into()).encrypt(&mut ciphertext);
+
+    print_valid_chars!(ciphertext.iter());
+    HttpResponse::Ok().content_type("application/octet-stream").body(ciphertext)
 }
 
 #[macro_export]
@@ -105,13 +131,6 @@ async fn server_data() -> HttpResponse {
     resp!("count=0\nnexttime=0\n")
 }
 
-#[post("/basicinfo")]
-async fn basicinfo() -> HttpResponse {
-    // Encrypt or something first...
-    // Very possible PGP is needed I think/? or aes portion ... idk
-    resp!("Harder to do")
-}
-
 async fn index(req: actix_web::HttpRequest) -> HttpResponse {
     println!("---");
     println!("Method: {:?}", req.method());
@@ -119,23 +138,6 @@ async fn index(req: actix_web::HttpRequest) -> HttpResponse {
     println!("Path: {:?}", req.path());
     dbg!(&req);
     HttpResponse::Ok().append_header(ContentType(mime::TEXT_PLAIN)).body("shit")
-}
-
-fn _aes_encrypt(_plaintext: String) {
-    // Create an instance of your JSON object
-    let data: MyData = MyData { name: "Alice".to_string(), age: 30 };
-    let plaintext: String = serde_json::to_string(&data).unwrap();
-    dbg!(&plaintext);
-    // Crypto constants
-    let key: &[u8] = "0123456789012345".as_bytes();
-    let iv: &[u8] = "0123456789012345".as_bytes();
-
-    // Encrypt
-    let mut ciphertext = plaintext.as_bytes().to_vec();
-    Aes128CfbEnc::new(key.into(), iv.into()).encrypt(&mut ciphertext);
-
-    // Print
-    print_valid_chars!(ciphertext.iter());
 }
 
 fn load_rustls_config() -> rustls::ServerConfig {
