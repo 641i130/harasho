@@ -47,7 +47,7 @@ async fn basicinfo() -> HttpResponse {
     Aes128CfbEnc::new(key.into(), iv.into()).encrypt(&mut ciphertext);
 
     print_valid_chars!(ciphertext.iter());
-    HttpResponse::Ok().content_type("application/octet-stream").body(ciphertext)
+    HttpResponse::Ok().append_header(ContentType::octet_stream()).body(ciphertext)
 }
 
 #[macro_export]
