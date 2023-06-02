@@ -13,40 +13,46 @@ use rustls_pemfile::{certs, pkcs8_private_keys};
 use serde::{Deserialize, Serialize};
 use std::fs::File;
 use std::io::BufReader;
+use std::io::Read;
 
+use openssl::rsa::{Padding, Rsa};
 type Aes128CfbEnc = cfb_mode::Encryptor<aes::Aes128>;
 
-#[derive(Serialize, Deserialize)]
-struct BasicInfo {
-    BaseUrl: String,
-    DownloadUrl: String,
-    Key: String,
-    Iv: String,
-    TenpoIndex: u16,
-}
+//use rsa::pkcs8::DecodePublicKey;
+//use rsa::{Pkcs1v15Encrypt, RsaPrivateKey, RsaPublicKey};
 
 #[post("/basicinfo")]
 async fn basicinfo() -> HttpResponse {
-    // Encrypt or something first...
-    // Very possible PGP is needed I think/? or aes portion ... idk
-    let data: BasicInfo = BasicInfo {
-        BaseUrl: "http://10.3.0.53/game/info".to_string(),
-        DownloadUrl: "http://10.3.0.53/download".to_string(),
-        Key: "0123456789012345".to_string(),
-        Iv: "0123456789012345".to_string(),
-        TenpoIndex: 1337u16,
-    };
-    let plaintext: String = serde_json::to_string(&data).unwrap();
+    /*
+        let pem = "-----BEGIN PUBLIC KEY-----
+    MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAy63nybDg2d0l5Em5RTsx
+    0QJ4WhuT4DwrzJD/SdPDbOotXE5BiVycfNxcfXVSa74SvqThyQs4KasZyK/NWJN6
+    Xyi7NQgh2xKYc3eVj8b8MSkhz5Y7631dscLQRR9sDiTf2+jR8umd6U9op/ZucaOU
+    zaEcyHalryeeRwD8q7mtlBccL+5dSVVWuPaJ/Oh4Oivk4qNunYHygQ/iw2vBgN3f
+    6tB1yiKlUe0T51FS1yJcavWilp2JA6XGEhh0OmFJX6wf5vPu9heTXGqnriClinXn
+    XV1zUPDaa0udD8n2OV9NphozqD7TT4pE68G65Xz/iLAaEudSg7f1Shu+VFtt/cF4
+    NwIDAQAB
+    -----END PUBLIC KEY-----";
+        */
+    let mut key_file = File::open("priv.pem").unwrap();
 
-    // Crypto constants
-    let key: &[u8] = "0123456789012345".as_bytes();
-    let iv: &[u8] = "0123456789012345".as_bytes();
+    let mut key_buffer = Vec::new();
+    key_file.read_to_end(&mut key_buffer).unwrap();
 
-    // Encrypt
-    let mut ciphertext = plaintext.as_bytes().to_vec();
-    Aes128CfbEnc::new(key.into(), iv.into()).encrypt(&mut ciphertext);
+    // Load the private key from the PEM data
+    let rsa = Rsa::private_key_from_pem(&key_buffer).unwrap();
 
-    print_valid_chars!(ciphertext.iter());
+    let plaintext = r#"
+    {'result':200,'response':{'base_url':'http://10.3.0.53/game/info','download_url':'http://10.3.0.53/download','key':'01234567890123456789012345678901','iv':'0123456789012345','tenpo_index':1337}}
+    "#;
+    let mut ciphertext = vec![0; rsa.size() as usize];
+    rsa.public_encrypt(plaintext.as_bytes(), &mut ciphertext, Padding::PKCS1).unwrap();
+
+    println!("{:?}", String::from_utf8_lossy(&ciphertext));
+
+    //let mut rng = rand::thread_rng();
+    //let pub_key = RsaPublicKey::from_public_key_pem(pem).unwrap();
+    //let ciphertext = pub_key.encrypt(&mut rng, Pkcs1v15Encrypt, &plaintext.as_bytes()).expect("failed to encrypt");
     HttpResponse::Ok().append_header(ContentType::octet_stream()).body(ciphertext)
 }
 
@@ -57,26 +63,9 @@ macro_rules! resp {
     };
 }
 
-#[macro_export]
-macro_rules! print_valid_chars {
-    ($slice:expr) => {{
-        print!("{{{{");
-        let mut valid_chars = String::new();
-        for &byte in $slice {
-            if let Ok(chr) = std::str::from_utf8(&[byte]) {
-                if chr.is_ascii() && &byte >= &32 {
-                    valid_chars.push_str(chr);
-                }
-            } else {
-                valid_chars.push_str(".");
-            }
-        }
-        println!("{}}}}}", valid_chars);
-    }};
-}
-
-#[get("/alive/303807/Alive.txt")]
-async fn alive() -> HttpResponse {
+#[get("/alive/{id}/Alive.txt")]
+async fn alive(id: web::Path<String>) -> HttpResponse {
+    println!("/alive/{}/Alive.txt", id);
     resp!("")
 }
 
@@ -109,7 +98,22 @@ async fn cursel() -> HttpResponse {
 async fn gameinfo() -> HttpResponse {
     resp!("0\n3\n301000,test1\n302000,test2\n303000,test3\n")
 }
+#[post("/game/info")]
+async fn game_info() -> HttpResponse {
+    // JSON type that is AES encrypted
+    let plaintext = r#"{"result":200,"response":{"base_url":"http://10.3.0.53/game/next","information":[],"event_information":[],"encore_expiration_date":"2033-05-27"}}"#;
 
+    // Crypto constants
+    let key: &[u8] = "0123456789012345".as_bytes();
+    let iv: &[u8] = "0123456789012345".as_bytes();
+
+    // Encrypt
+    let mut ciphertext = plaintext.as_bytes().to_vec();
+    Aes128CfbEnc::new(key.into(), iv.into()).encrypt(&mut ciphertext);
+
+    //println!("{:?}", String::from_utf8_lossy(&ciphertext));
+    HttpResponse::Ok().append_header(ContentType::octet_stream()).body(ciphertext)
+}
 #[get("/server/certify.php")]
 async fn certify() -> HttpResponse {
     let res = format!(
@@ -119,7 +123,7 @@ name=LLServer
 pref=nesys
 addr=Local
 x-next-time=15
-x-img=https://static.wikia.nocookie.net/houkai-star-rail/images/1/18/Character_March_7th_Splash_Art.png
+x-img=http://10.3.0.53/test.png
 x-ranking=http://10.3.0.53/ranking/ranking.php
 ticket=9251859b560b33b031516d05c2ef3c28"
     );
@@ -136,7 +140,7 @@ async fn index(req: actix_web::HttpRequest) -> HttpResponse {
     println!("Method: {:?}", req.method());
     println!("Host: {:?}", req.head().uri.host());
     println!("Path: {:?}", req.path());
-    dbg!(&req);
+    //dbg!(&req);
     HttpResponse::Ok().append_header(ContentType(mime::TEXT_PLAIN)).body("shit")
 }
 
@@ -163,9 +167,10 @@ fn load_rustls_config() -> rustls::ServerConfig {
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    env_logger::init_from_env(env_logger::Env::new().default_filter_or("info"));
+    //env_logger::init_from_env(env_logger::Env::new().default_filter_or("debug"));
     let config = load_rustls_config();
     info!("Certificates loaded.");
+    println!("Started!");
     HttpServer::new(|| {
         App::new()
             .service(alive)
@@ -175,13 +180,14 @@ async fn main() -> std::io::Result<()> {
             .service(fire_alert)
             .service(cursel)
             .service(gameinfo)
+            .service(game_info)
             .service(certify)
             .service(server_data)
             .service(basicinfo)
             .route("{path:.*}", web::get().to(index))
     })
-    .bind("127.0.0.1:80")?
-    .bind("127.0.0.1:5107")?
+    .bind("0.0.0.0:80")?
+    .bind("0.0.0.0:5107")?
     .bind_rustls("0.0.0.0:443", config)?
     .run()
     .await
