@@ -8,18 +8,21 @@ use actix_web::{get, http::header::ContentType, post, web, App, HttpRequest, Htt
 use aes::cipher::{AsyncStreamCipher, KeyIvInit};
 use log::{debug, error, info, log_enabled, Level};
 use rustls::{Certificate, PrivateKey, ServerConfig};
-use rustls_pemfile::{certs, pkcs8_private_keys};
-
 use serde::{Deserialize, Serialize};
+
+// Reading the cert
+use rustls_pemfile::{certs, pkcs8_private_keys};
 use std::fs::File;
 use std::io::BufReader;
 use std::io::Read;
 
+// AES encryption
 use openssl::rsa::{Padding, Rsa};
 type Aes128CfbEnc = cfb_mode::Encryptor<aes::Aes128>;
 
-//use rsa::pkcs8::DecodePublicKey;
-//use rsa::{Pkcs1v15Encrypt, RsaPrivateKey, RsaPublicKey};
+// Certify
+use hex_literal::hex;
+use md5::{Digest, Md5};
 
 #[post("/basicinfo")]
 async fn basicinfo() -> HttpResponse {
@@ -120,9 +123,29 @@ async fn game_info() -> HttpResponse {
     //println!("{:?}", String::from_utf8_lossy(&ciphertext));
     HttpResponse::Ok().append_header(ContentType::octet_stream()).body(ciphertext)
 }
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Certify {
+    pub gid: u32,
+    pub mac: String,
+    pub r: u32,
+    pub md: String,
+    pub cn: String,
+}
+
 #[get("/server/certify.php")]
-async fn certify() -> HttpResponse {
+async fn certify(data: web::Query<Certify>, req: HttpRequest) -> HttpResponse {
+    println!("Certify!");
+    dbg!(&data);
     // Need to
+    let mut hasher = Md5::new();
+    let gid_bytes = "303807".as_bytes(); // LL game nesys id
+    hasher.update(gid_bytes);
+    let hash_result = hasher.finalize();
+    for byte in hash_result {
+        print!("{:x?}", &byte);
+    }
+    println!("");
     let res = format!(
         "host=http://10.3.0.53
 no=1337
