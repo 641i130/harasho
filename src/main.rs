@@ -59,12 +59,18 @@ async fn basicinfo() -> HttpResponse {
 #[macro_export]
 macro_rules! resp {
     ($str:expr) => {
-        HttpResponse::Ok().append_header(ContentType(mime::TEXT_PLAIN)).body($str)
+        //HttpResponse::Ok().append_header(ContentType(mime::TEXT_PLAIN)).body($str)
+        HttpResponse::Ok().append_header(ContentType::octet_stream()).body($str)
     };
 }
 
 #[get("/alive/{id}/Alive.txt")]
-async fn alive(id: web::Path<String>) -> HttpResponse {
+async fn alive(id: web::Path<String>, req: actix_web::HttpRequest) -> HttpResponse {
+    println!("---");
+    println!("Method: {:?}", req.method());
+    println!("Host: {:?}", req.head().uri.host());
+    println!("Path: {:?}", req.path());
+
     println!("/alive/{}/Alive.txt", id);
     resp!("")
 }
@@ -116,6 +122,7 @@ async fn game_info() -> HttpResponse {
 }
 #[get("/server/certify.php")]
 async fn certify() -> HttpResponse {
+    // Need to
     let res = format!(
         "host=http://10.3.0.53
 no=1337
