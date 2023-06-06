@@ -62,8 +62,8 @@ async fn basicinfo() -> HttpResponse {
 #[macro_export]
 macro_rules! resp {
     ($str:expr) => {
-        //HttpResponse::Ok().append_header(ContentType(mime::TEXT_PLAIN)).body($str)
-        HttpResponse::Ok().append_header(ContentType::octet_stream()).body($str)
+        HttpResponse::Ok().append_header(ContentType(mime::TEXT_PLAIN)).body($str)
+        //HttpResponse::Ok().append_header(ContentType::octet_stream()).body($str)
     };
 }
 
@@ -137,9 +137,8 @@ pub struct Certify {
 async fn certify(data: web::Query<Certify>, req: HttpRequest) -> HttpResponse {
     println!("Certify!");
     dbg!(&data);
-    // Need to
     let mut hasher = Md5::new();
-    let gid_bytes = "303807".as_bytes(); // LL game nesys id
+    let gid_bytes = "303801".as_bytes(); // LL game nesys id
     hasher.update(gid_bytes);
     let hash_result = hasher.finalize();
     for byte in hash_result {
@@ -197,7 +196,7 @@ fn load_rustls_config() -> rustls::ServerConfig {
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    //env_logger::init_from_env(env_logger::Env::new().default_filter_or("debug"));
+    env_logger::init_from_env(env_logger::Env::new().default_filter_or("info"));
     let config = load_rustls_config();
     info!("Certificates loaded.");
     println!("Started!");
