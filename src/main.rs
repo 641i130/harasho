@@ -1,5 +1,3 @@
-//! Restart PC and see if installed certs work
-//! get rid of HTTP cert issue in access logs
 #![allow(unused_variables)]
 #![allow(non_snake_case)]
 #![allow(dead_code)]
@@ -26,6 +24,7 @@ use md5::{Digest, Md5};
 
 #[post("/basicinfo")]
 async fn basicinfo() -> HttpResponse {
+    println!("/basicinfo\nNot fully implemented!");
     /*
         let pem = "-----BEGIN PUBLIC KEY-----
     MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAy63nybDg2d0l5Em5RTsx
@@ -62,49 +61,51 @@ async fn basicinfo() -> HttpResponse {
 #[macro_export]
 macro_rules! resp {
     ($str:expr) => {
-        HttpResponse::Ok().append_header(ContentType(mime::TEXT_PLAIN)).body($str)
-        //HttpResponse::Ok().append_header(ContentType::octet_stream()).body($str)
+        //HttpResponse::Ok().append_header(ContentType(mime::TEXT_HTML)).body($str)
+        HttpResponse::Ok().append_header(ContentType::octet_stream()).body($str)
     };
 }
 
 #[get("/alive/{id}/Alive.txt")]
 async fn alive(id: web::Path<String>, req: actix_web::HttpRequest) -> HttpResponse {
-    println!("---");
-    println!("Method: {:?}", req.method());
-    println!("Host: {:?}", req.head().uri.host());
-    println!("Path: {:?}", req.path());
-
     println!("/alive/{}/Alive.txt", id);
     resp!("")
 }
 
 #[get("/alive/i.php")]
 async fn alive_i() -> HttpResponse {
+    println!("/alive/i.php");
     resp!("REMOTE ADDRESS:10.3.0.53\nSERVER NAME:LLSIFAC\nSERVER ADDR:10.3.0.53")
 }
 
 #[post("/service/card/incomALL.php")]
 async fn incomALL() -> HttpResponse {
+    println!("/service/card/incomALL.php");
     resp!("1+1")
 }
 
 #[post("/service/respone/respone.php")]
 async fn respone() -> HttpResponse {
+    println!("____________________________");
+    println!("/service/respone/respone.php");
     resp!("1")
 }
 
 #[get("/server/FireAlert.php")]
 async fn fire_alert() -> HttpResponse {
+    println!("/server/FireAlert.php");
     resp!("OK")
 }
 
 #[get("/server/cursel.php")]
 async fn cursel() -> HttpResponse {
+    println!("/server/cursel.php");
     resp!("1\n")
 }
 
 #[get("/server/gameinfo.php")]
 async fn gameinfo() -> HttpResponse {
+    println!("/server/gameinfo.php");
     resp!("0\n3\n301000,test1\n302000,test2\n303000,test3\n")
 }
 #[post("/game/info")]
@@ -121,6 +122,7 @@ async fn game_info() -> HttpResponse {
     Aes128CfbEnc::new(key.into(), iv.into()).encrypt(&mut ciphertext);
 
     //println!("{:?}", String::from_utf8_lossy(&ciphertext));
+    println!("/game/info");
     HttpResponse::Ok().append_header(ContentType::octet_stream()).body(ciphertext)
 }
 
@@ -135,16 +137,16 @@ pub struct Certify {
 
 #[get("/server/certify.php")]
 async fn certify(data: web::Query<Certify>, req: HttpRequest) -> HttpResponse {
-    println!("Certify!");
+    println!("/server/certify.php");
     dbg!(&data);
     let mut hasher = Md5::new();
     let gid_bytes = "303801".as_bytes(); // LL game nesys id
     hasher.update(gid_bytes);
     let hash_result = hasher.finalize();
+    let mut ticket = String::new();
     for byte in hash_result {
-        print!("{:x?}", &byte);
+        ticket.push_str(&format!("{:x?}", &byte));
     }
-    println!("");
     let res = format!(
         "host=http://10.3.0.53
 no=1337
@@ -156,6 +158,7 @@ x-img=http://10.3.0.53/test.png
 x-ranking=http://10.3.0.53/ranking/ranking.php
 ticket=9251859b560b33b031516d05c2ef3c28"
     );
+    println!("Response:\n{}", &res);
     resp!(res)
 }
 
@@ -178,8 +181,8 @@ fn load_rustls_config() -> rustls::ServerConfig {
     let config = ServerConfig::builder().with_safe_defaults().with_no_client_auth();
 
     // load TLS key/cert files
-    let cert_file = &mut BufReader::new(File::open("./certs/nesica1.crt").expect("Certificate not found!"));
-    let key_file = &mut BufReader::new(File::open("./certs/nesica1.key").expect("Key not found!"));
+    let cert_file = &mut BufReader::new(File::open("./certs/test/nesica1.crt").expect("Certificate not found!"));
+    let key_file = &mut BufReader::new(File::open("./certs/test/nesica1.key").expect("Key not found!"));
 
     // convert files to key/cert objects
     let cert_chain = certs(cert_file).unwrap().into_iter().map(Certificate).collect();
@@ -196,7 +199,7 @@ fn load_rustls_config() -> rustls::ServerConfig {
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    env_logger::init_from_env(env_logger::Env::new().default_filter_or("info"));
+    //env_logger::init_from_env(env_logger::Env::new().default_filter_or("info"));
     let config = load_rustls_config();
     info!("Certificates loaded.");
     println!("Started!");
