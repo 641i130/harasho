@@ -199,7 +199,7 @@ fn load_rustls_config() -> rustls::ServerConfig {
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    //env_logger::init_from_env(env_logger::Env::new().default_filter_or("info"));
+    env_logger::init_from_env(env_logger::Env::new().default_filter_or("info"));
     let config = load_rustls_config();
     info!("Certificates loaded.");
     println!("Started!");

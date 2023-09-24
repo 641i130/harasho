@@ -16,3 +16,4 @@ openssl req -newkey rsa:2048 -nodes -keyout nesica1.key -out nesica1.crt -CA nes
 openssl pkcs12 -export -certpbe PBE-SHA1-3DES -keypbe PBE-SHA1-3DES -nomac -inkey root.key -in root.crt -out root.pfx
 openssl pkcs12 -export -certpbe PBE-SHA1-3DES -keypbe PBE-SHA1-3DES -nomac -inkey nesys.key -in nesys.crt -out nesys.pfx
 openssl pkcs12 -export -certpbe PBE-SHA1-3DES -keypbe PBE-SHA1-3DES -nomac -inkey nesica1.key -in nesica1.crt -out nesica1.pfx
+
