@@ -4,10 +4,10 @@ A 'good' LLSIFAC (or LLSIFASA) server emulator for a certain arcade machine.
 
 # /etc/hosts
 ```
-localhost cert.nesys.jp
-localhost cert3.nesys.jp
-localhost data.nesys.jp
-localhost proxy.nesys.jp
-localhost nesys.taito.co.jp
-localhost fjm170920zero.nesica.net
+127.0.0.1 cert.nesys.jp
+127.0.0.1 cert3.nesys.jp
+127.0.0.1 data.nesys.jp
+127.0.0.1 proxy.nesys.jp
+127.0.0.1 nesys.taito.co.jp
+127.0.0.1 fjm170920zero.nesica.net
 ```

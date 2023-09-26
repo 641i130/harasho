@@ -38,13 +38,11 @@ async fn basicinfo() -> HttpResponse {
     key_file.read_to_end(&mut key_buffer).unwrap();
     // Load the private key from the PEM data
     let rsa = Rsa::private_key_from_pem(&key_buffer).unwrap();
-    let plaintext = r#"{'result':200,'response':{'base_url':'http://10.3.0.53/game/info','download_url':'http://10.3.0.53/download','key':'01234567890123456789012345678901','iv':'0123456789012345','tenpo_index':1337}}"#;
+    let plaintext = r#"{"result":200,"response":{"base_url":"http://data.nesys.jp/game","download_url":"http://data.nesys.jp/download","key":"01234567890123456789012345678901","iv":"0123456789012345","tenpo_index":1337}}"#;
     let mut ciphertext = vec![0; rsa.size() as usize];
     rsa.private_encrypt(plaintext.as_bytes(), &mut ciphertext, Padding::PKCS1).unwrap();
-
-    println!("{:?}", &plaintext);
-    println!("{:?}", String::from_utf8_lossy(&ciphertext));
-
+    println!("\t{:?}", &plaintext);
+    // println!("{:?}", String::from_utf8_lossy(&ciphertext));
     HttpResponse::Ok().append_header(ContentType::octet_stream()).body(ciphertext)
 }
 
@@ -59,54 +57,55 @@ macro_rules! resp {
 #[get("/alive/{id}/Alive.txt")]
 async fn alive(id: web::Path<String>, req: actix_web::HttpRequest) -> HttpResponse {
     println!("____________________________");
-    println!("/alive/{}/Alive.txt", id);
+    println!("get -> /alive/{}/Alive.txt", id);
     resp!("")
 }
 
 #[get("/alive/i.php")]
 async fn alive_i() -> HttpResponse {
     println!("____________________________");
-    println!("/alive/i.php");
-    resp!("REMOTE ADDRESS:10.3.0.53\nSERVER NAME:LLSIFAC\nSERVER ADDR:10.3.0.53")
+    println!("get -> /alive/i.php");
+    resp!("REMOTE ADDRESS:10.3.0.53\nSERVER NAME:harasho\nSERVER ADDR:10.3.0.53")
 }
 
 #[post("/service/card/incomALL.php")]
 async fn incomALL() -> HttpResponse {
     println!("____________________________");
-    println!("/service/card/incomALL.php");
+    println!("post -> /service/card/incomALL.php");
     resp!("1+1")
 }
 
 #[post("/service/respone/respone.php")]
 async fn respone() -> HttpResponse {
     println!("____________________________");
-    println!("/service/respone/respone.php");
+    println!("post -> /service/respone/respone.php");
     resp!("1")
 }
 
 #[get("/server/FireAlert.php")]
 async fn fire_alert() -> HttpResponse {
     println!("____________________________");
-    println!("/server/FireAlert.php");
+    println!("get -> /server/FireAlert.php");
     resp!("OK")
 }
 
 #[get("/server/cursel.php")]
 async fn cursel() -> HttpResponse {
     println!("____________________________");
-    println!("/server/cursel.php");
+    println!("get -> /server/cursel.php");
     resp!("1\n")
 }
 
 #[get("/server/gameinfo.php")]
 async fn gameinfo() -> HttpResponse {
     println!("____________________________");
-    println!("/server/gameinfo.php");
+    println!("get -> /server/gameinfo.php");
     resp!("0\n3\n301000,test1\n302000,test2\n303000,test3\n")
 }
 #[post("/game/info")]
 async fn game_info() -> HttpResponse {
     println!("____________________________");
+    println!("post -> /game/info");
     // JSON type that is AES encrypted
     let plaintext = r#"{"result":200,"response":{"base_url":"http://10.3.0.53/game/next","information":[],"event_information":[],"encore_expiration_date":"2033-05-27"}}"#;
 
@@ -119,7 +118,6 @@ async fn game_info() -> HttpResponse {
     Aes128CfbEnc::new(key.into(), iv.into()).encrypt(&mut ciphertext);
 
     println!("{:?}", String::from_utf8_lossy(&ciphertext));
-    println!("/game/info");
     HttpResponse::Ok().append_header(ContentType::octet_stream()).body(ciphertext)
 }
 
@@ -135,7 +133,8 @@ pub struct Certify {
 #[get("/server/certify.php")]
 async fn certify() -> HttpResponse {
     //async fn certify(data: web::Query<Certify>, req: HttpRequest) -> HttpResponse {
-    println!("/server/certify.php");
+    println!("____________________________");
+    println!("get -> /server/certify.php");
     /*
     dbg!(&data);
     let mut hasher = Md5::new();
@@ -147,16 +146,15 @@ async fn certify() -> HttpResponse {
         ticket.push_str(&format!("{:x?}", &byte));
     }*/
     let res = format!(
-"host=http://10.3.0.53
+"host=http://data.nesys.jp
 no=1337
 name=LLServer
 pref=nesys
 addr=Local
 x-next-time=15
-x-img=http://10.3.0.53/test.png
-x-ranking=http://10.3.0.53/ranking/ranking.php
-ticket=9251859b560b33b031516d05c2ef3c28"
-    );
+x-img=http://ll.aoeu.top/news.png
+x-ranking=http://ll.aoeu.top/ranking/ranking.php
+ticket=63c6598e9ddd2961e7dfa4d4eb8144a1");
     println!("Response:\n{}", &res);
     resp!(res)
 }
@@ -167,7 +165,7 @@ async fn server_data() -> HttpResponse {
 }
 
 async fn index(req: actix_web::HttpRequest) -> HttpResponse {
-    println!("---");
+    println!("----------------------------");
     println!("Method: {:?}", req.method());
     println!("Host: {:?}", req.head().uri.host());
     println!("Path: {:?}", req.path());
