@@ -27,7 +27,7 @@ type Aes128CfbEnc = cfb_mode::Encryptor<aes::Aes128>;
 use hex_literal::hex;
 use md5::{Digest, Md5};
 
-#[post("/basicinfo")]
+#[post("/basicinfo/")]
 async fn basicinfo() -> HttpResponse {
     // This function is technically decrypting the plaintext into cipher text for the client to
     // encrypt to read it. It's very backwards, but this is how the game works. I hate it.
@@ -46,6 +46,22 @@ async fn basicinfo() -> HttpResponse {
     HttpResponse::Ok().append_header(ContentType::octet_stream()).body(ciphertext)
 }
 
+fn aes_en(plaintext: &&str) -> Vec<u8> {
+    // Encodes string with aes 128 cfb encryption
+    // Return encrypted text
+    // Crypto constants
+    let mut ciphertext = plaintext.as_bytes().to_vec();
+    let key: &[u8] = "0123456789012345".as_bytes();
+    let iv: &[u8] = "0123456789012345".as_bytes();
+
+    // Encrypt
+    Aes128CfbEnc::new(key.into(), iv.into()).encrypt(&mut ciphertext);
+    ciphertext.into()
+}
+
+fn aes_dec(ciphertext: &&str) ->  () {
+    ()
+}
 #[macro_export]
 macro_rules! resp {
     ($str:expr) => {
@@ -68,17 +84,17 @@ async fn alive_i() -> HttpResponse {
     resp!("REMOTE ADDRESS:10.3.0.53\nSERVER NAME:harasho\nSERVER ADDR:10.3.0.53")
 }
 
-#[post("/service/card/incomALL.php")]
+#[post("/service/incom/incomALL.php")]
 async fn incomALL() -> HttpResponse {
     println!("____________________________");
-    println!("post -> /service/card/incomALL.php");
+    println!("post -> /service/incom/incomALL.php\n1+1");
     resp!("1+1")
 }
 
 #[post("/service/respone/respone.php")]
 async fn respone() -> HttpResponse {
     println!("____________________________");
-    println!("post -> /service/respone/respone.php");
+    println!("post -> /service/respone/respone.php\n1");
     resp!("1")
 }
 
@@ -86,7 +102,7 @@ async fn respone() -> HttpResponse {
 async fn fire_alert() -> HttpResponse {
     println!("____________________________");
     println!("get -> /server/FireAlert.php");
-    resp!("OK")
+    resp!("Success")
 }
 
 #[get("/server/cursel.php")]
@@ -100,22 +116,28 @@ async fn cursel() -> HttpResponse {
 async fn gameinfo() -> HttpResponse {
     println!("____________________________");
     println!("get -> /server/gameinfo.php");
-    resp!("0\n3\n301000,test1\n302000,test2\n303000,test3\n")
+    resp!(r#"0
+3
+301000,test1
+302000,test2
+303000,test3"#)
 }
+/*
+#[post("/game")]
+async fn game_stuff(body: web::Bytes, req: actix_web::HttpRequest) -> HttpResponse {
+    println!("____________________________");
+    println!("post -> /game");
+    println!("{:?}",String::from_utf8_lossy(&body));
+    resp!("")
+}
+*/
 #[post("/game/info")]
 async fn game_info() -> HttpResponse {
     println!("____________________________");
     println!("post -> /game/info");
     // JSON type that is AES encrypted
     let plaintext = r#"{"result":200,"response":{"base_url":"http://10.3.0.53/game/next","information":[],"event_information":[],"encore_expiration_date":"2033-05-27"}}"#;
-
-    // Crypto constants
-    let key: &[u8] = "0123456789012345".as_bytes();
-    let iv: &[u8] = "0123456789012345".as_bytes();
-
-    // Encrypt
-    let mut ciphertext = plaintext.as_bytes().to_vec();
-    Aes128CfbEnc::new(key.into(), iv.into()).encrypt(&mut ciphertext);
+    let ciphertext = aes_en(&plaintext);
 
     println!("{:?}", String::from_utf8_lossy(&ciphertext));
     HttpResponse::Ok().append_header(ContentType::octet_stream()).body(ciphertext)
@@ -146,7 +168,7 @@ async fn certify() -> HttpResponse {
         ticket.push_str(&format!("{:x?}", &byte));
     }*/
     let res = format!(
-"host=http://data.nesys.jp
+"host=http://ll.aoeu.top
 no=1337
 name=LLServer
 pref=nesys
@@ -181,6 +203,15 @@ async fn test(req: HttpRequest) -> Result<NamedFile> {
 
     let path: PathBuf = req.match_info().query("test.png").parse().unwrap();
     Ok(NamedFile::open(path)?)
+}
+
+async fn handle_post_request(body: web::Bytes,req: HttpRequest) -> HttpResponse {
+    println!("----------------------------");
+    println!("Method: {:?}", req.method());
+    println!("Host: {:?}", req.head().uri.host());
+    println!("Path: {:?}", req.path());
+    println!("{:?}", String::from_utf8_lossy(&body));
+    HttpResponse::Ok().append_header(ContentType(mime::TEXT_PLAIN)).body("shit")
 }
 
 /*
@@ -221,9 +252,12 @@ async fn main() -> std::io::Result<()> {
             .service(cursel)
             .service(gameinfo)
             .service(game_info)
+            //.service(game_stuff)
             .service(certify)
             .service(server_data)
             .service(basicinfo)
+            //.service(web::resource("/*").route(web::post().to(handle_post_request)))
+            .route("{path:.*}",web::post().to(handle_post_request))
             .route("/{test.png}",web::get().to(test))
             .route("{path:.*}", web::get().to(index))
     })
