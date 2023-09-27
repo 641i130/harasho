@@ -87,14 +87,14 @@ async fn alive_i() -> HttpResponse {
 #[post("/service/incom/incomALL.php")]
 async fn incomALL() -> HttpResponse {
     println!("____________________________");
-    println!("post -> /service/incom/incomALL.php\n1+1");
+    println!("post -> /service/card/incomALL.php");
     resp!("1+1")
 }
 
 #[post("/service/respone/respone.php")]
 async fn respone() -> HttpResponse {
     println!("____________________________");
-    println!("post -> /service/respone/respone.php\n1");
+    println!("post -> /service/respone/respone.php");
     resp!("1")
 }
 
@@ -116,11 +116,7 @@ async fn cursel() -> HttpResponse {
 async fn gameinfo() -> HttpResponse {
     println!("____________________________");
     println!("get -> /server/gameinfo.php");
-    resp!(r#"0
-3
-301000,test1
-302000,test2
-303000,test3"#)
+    resp!("0\n3\n301000,test1\n302000,test2\n303000,test3\n")
 }
 /*
 #[post("/game")]
