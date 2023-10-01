@@ -2,37 +2,45 @@
 #![allow(non_snake_case)]
 #![allow(dead_code)]
 #![allow(unused_imports)]
-use actix_web::{dev::ServiceRequest, dev::ServiceResponse, Error, Result, get, http::header::ContentType, post, web, App, HttpRequest, HttpResponse, HttpServer};
-use actix_service::Service;
-use aes::cipher::{AsyncStreamCipher, KeyIvInit};
+use actix_web::{web, HttpResponse, dev::Service, dev::ServiceRequest, dev::ServiceResponse, Error, Result, get, http::header::ContentType, post, App, HttpRequest, HttpServer};
 use log::{debug, error, info, log_enabled, Level};
 use serde::{Deserialize, Serialize};
 use std::fs::File;
 use std::io::BufReader;
 use std::io::Read;
+
+// Certificate encryption
 use rsa::Pkcs1v15Encrypt;
 use rsa::RsaPublicKey;
 use rsa::pkcs8::DecodePublicKey;
+use openssl::rsa::{Padding, Rsa};
+
 use actix_files::NamedFile;
 use std::path::PathBuf;
 use colored::Colorize;
-
-// Reading the cert
-//use rustls_pemfile::{certs, pkcs8_private_keys};
-//use rustls::{Certificate, PrivateKey, ServerConfig};
-
-// AES encryption
-use openssl::rsa::{Padding, Rsa};
-type Aes128CfbEnc = cfb_mode::Encryptor<aes::Aes128>;
-type Aes128CfbDec = cfb_mode::Decryptor<aes::Aes128>;
 
 // Certify
 use hex_literal::hex;
 use md5::{Digest, Md5};
 
 // Printing requests
-use actix_web::{dev::Service as _};
 use futures_util::future::FutureExt;
+
+// Modules
+mod routes;
+use crate::routes::game_routes::game_stuff;
+// AES
+mod cry;
+use crate::cry::aes::{aes_en, aes_dec};
+
+#[macro_export]
+macro_rules! resp {
+    ($str:expr) => {
+        //HttpResponse::Ok().append_header(ContentType(mime::TEXT_HTML)).body($str)
+        HttpResponse::Ok().append_header(ContentType::octet_stream()).body($str)
+    };
+}
+
 
 #[post("/basicinfo/")]
 async fn basicinfo() -> HttpResponse {
@@ -49,30 +57,6 @@ async fn basicinfo() -> HttpResponse {
     println!("{}",format!("RSA Public Encrypt").bold().red());
     // println!("{:?}", String::from_utf8_lossy(&ciphertext));
     HttpResponse::Ok().append_header(ContentType::octet_stream()).body(ciphertext)
-}
-
-fn aes_en(plaintext: &&str) -> Vec<u8> {
-    // Encodes string with aes 128 cfb encryption
-    // Return encrypted text
-    // Crypto constants
-    let mut ciphertext = plaintext.as_bytes().to_vec();
-    let key: &[u8] = "0123456789012345".as_bytes();
-    let iv: &[u8] = "0123456789012345".as_bytes();
-
-    // Encrypt
-    Aes128CfbEnc::new(key.into(), iv.into()).encrypt(&mut ciphertext);
-    ciphertext.into()
-}
-
-fn aes_dec(ciphertext: &&str) ->  () {
-    ()
-}
-#[macro_export]
-macro_rules! resp {
-    ($str:expr) => {
-        //HttpResponse::Ok().append_header(ContentType(mime::TEXT_HTML)).body($str)
-        HttpResponse::Ok().append_header(ContentType::octet_stream()).body($str)
-    };
 }
 
 #[get("/alive/{id}/Alive.txt")]
@@ -156,7 +140,7 @@ async fn index(req: actix_web::HttpRequest) -> HttpResponse {
     println!("{}",format!("Host: {:?}", req.head().uri.host()).yellow());
     println!("{}",format!("Path: {:?}", req.path()).yellow());
     //dbg!(&req);
-    HttpResponse::Ok().append_header(ContentType(mime::TEXT_PLAIN)).body("shit")
+    resp!("")
 }
 
 async fn test(req: HttpRequest) -> Result<NamedFile> {
@@ -173,32 +157,11 @@ async fn handle_post_request(body: web::Bytes,req: HttpRequest) -> HttpResponse 
     println!("{}",format!("Method: {:?}", req.method()).yellow());
     println!("{}",format!("Host: {:?}", req.head().uri.host()).yellow());
     println!("{}",format!("Path: {:?}", req.path()).yellow());
-    println!("{:?}", String::from_utf8_lossy(&body));
-    HttpResponse::Ok().append_header(ContentType(mime::TEXT_PLAIN)).body("shit")
+    println!("{}", String::from_utf8_lossy(&body));
+    println!("{}", aes_dec(&body));
+    resp!("")
 }
 
-/*
-fn load_rustls_config() -> rustls::ServerConfig {
-    // init server config builder with safe defaults
-    let config = ServerConfig::builder().with_safe_defaults().with_no_client_auth();
-
-    // load TLS key/cert files
-    let cert_file = &mut BufReader::new(File::open("./certs/test/nesica1.crt").expect("Certificate not found!"));
-    let key_file = &mut BufReader::new(File::open("./certs/test/nesica1.key").expect("Key not found!"));
-
-    // convert files to key/cert objects
-    let cert_chain = certs(cert_file).unwrap().into_iter().map(Certificate).collect();
-    let mut keys: Vec<PrivateKey> = pkcs8_private_keys(key_file).unwrap().into_iter().map(PrivateKey).collect();
-
-    // exit if no keys could be parsed
-    if keys.is_empty() {
-        eprintln!("Could not locate PKCS 8 private keys.");
-        std::process::exit(1);
-    }
-
-    config.with_single_cert(cert_chain, keys.remove(0)).unwrap()
-}
-*/
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     env_logger::init_from_env(env_logger::Env::new().default_filter_or("info"));
@@ -215,6 +178,7 @@ async fn main() -> std::io::Result<()> {
             .service(cursel)
             .service(gameinfo)
             .service(game_info)
+            //.service(game_stuff)
             .service(certify)
             .service(server_data)
             .service(basicinfo)
@@ -226,13 +190,14 @@ async fn main() -> std::io::Result<()> {
                 println!("{}",format!("____________________________").black().on_white());
                 println!("{}",format!("{} -> {}", req.method(), req.path()).magenta());
                 srv.call(req).map(|res| {
+                    println!("{}",format!("-").black().on_white());
                     res
                 })
             })
     })
     .bind("0.0.0.0:80")?
     .bind("0.0.0.0:5107")?
-//    .bind_rustls("0.0.0.0:443", config)?
+    //.bind_rustls("0.0.0.0:443", config)?
     .run()
     .await
 }
