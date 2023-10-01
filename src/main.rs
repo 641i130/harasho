@@ -178,7 +178,7 @@ async fn main() -> std::io::Result<()> {
             .service(cursel)
             .service(gameinfo)
             .service(game_info)
-            //.service(game_stuff)
+            .service(game_stuff)
             .service(certify)
             .service(server_data)
             .service(basicinfo)
@@ -190,7 +190,7 @@ async fn main() -> std::io::Result<()> {
                 println!("{}",format!("____________________________").black().on_white());
                 println!("{}",format!("{} -> {}", req.method(), req.path()).magenta());
                 srv.call(req).map(|res| {
-                    println!("{}",format!("-").black().on_white());
+                    println!("{}",format!("***").black().on_magenta());
                     res
                 })
             })
