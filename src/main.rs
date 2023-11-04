@@ -42,11 +42,11 @@ macro_rules! resp {
 }
 
 
-#[post("/basicinfo/")]
+#[post("/basicinfo")]
 async fn basicinfo() -> HttpResponse {
     // This function is technically decrypting the plaintext into cipher text for the client to
     // encrypt to read it. It's very backwards, but this is how the game works. I hate it.
-    let mut key_file = File::open("priv.pem").unwrap();
+    let mut key_file = File::open("private_key.pem").unwrap();
     let mut key_buffer = Vec::new();
     key_file.read_to_end(&mut key_buffer).unwrap();
     // Load the private key from the PEM data
@@ -55,7 +55,7 @@ async fn basicinfo() -> HttpResponse {
     let mut ciphertext = vec![0; rsa.size() as usize];
     rsa.private_encrypt(plaintext.as_bytes(), &mut ciphertext, Padding::PKCS1).unwrap();
     println!("{}",format!("RSA Public Encrypt").bold().red());
-    // println!("{:?}", String::from_utf8_lossy(&ciphertext));
+    println!("{}",format!("{}", plaintext).bold().yellow());
     HttpResponse::Ok().append_header(ContentType::octet_stream()).body(ciphertext)
 }
 
@@ -102,6 +102,52 @@ async fn game_info() -> HttpResponse {
     println!("{:?}", String::from_utf8_lossy(&ciphertext));
     HttpResponse::Ok().append_header(ContentType::octet_stream()).body(ciphertext)
 }
+
+// Card Command Codes
+#[derive(Debug, Deserialize)]
+pub enum CardCmd {
+    READ = 256,
+    REGISTER = 512,
+    REISSUE = 1536,
+}
+
+impl CardCmd {
+    fn from_u16(cmd_str: u16) -> Option<Self> {
+        match cmd_str {
+            256 => Some(CardCmd::READ),
+            512 => Some(CardCmd::REGISTER),
+            1536 => Some(CardCmd::REISSUE),
+            _ => None, // Handle unknown values
+        }
+    }
+}
+
+#[derive(Debug, Deserialize)]
+pub struct CardVals {
+    cmd_str: u16, // Commands for card functions
+    card_no: u64, // Example: 7020392002385103
+}
+
+#[post("/service/card/cardn.cgi")]
+async fn cardn(web::Form(form): web::Form<CardVals>) -> HttpResponse {
+    dbg!(&form);
+    match CardCmd::from_u16(form.cmd_str) {
+        Some(CardCmd::READ) => {
+            println!("READ");
+            resp!(format!("1\n1,1\n{}",form.card_no))
+        },
+        Some(CardCmd::REGISTER) => {
+            println!("REGISTER");
+            resp!("")
+        },
+        Some(CardCmd::REISSUE) => {
+            println!("REISSUE");
+            resp!("")
+        },
+        _ => HttpResponse::NotFound().into()
+    }
+}
+
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Certify {
@@ -166,7 +212,7 @@ async fn handle_post_request(body: web::Bytes,req: HttpRequest) -> HttpResponse 
 async fn main() -> std::io::Result<()> {
     env_logger::init_from_env(env_logger::Env::new().default_filter_or("info"));
     //let config = load_rustls_config();
-    info!("Certificates loaded.");
+    //info!("Certificates loaded.");
     println!("Started!");
     HttpServer::new(|| {
         App::new()
@@ -182,6 +228,7 @@ async fn main() -> std::io::Result<()> {
             .service(certify)
             .service(server_data)
             .service(basicinfo)
+            .service(cardn)
             //.service(web::resource("/*").route(web::post().to(handle_post_request)))
             .route("{path:.*}",web::post().to(handle_post_request))
             .route("/{test.png}",web::get().to(test))
