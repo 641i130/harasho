@@ -136,13 +136,14 @@ async fn cardn(web::Form(form): web::Form<CardVals>) -> HttpResponse {
             println!("READ");
             resp!(format!("1\n1,1\n{}",form.card_no))
         },
-        Some(CardCmd::REGISTER) => {
-            println!("REGISTER");
-            resp!("")
-        },
         Some(CardCmd::REISSUE) => {
             println!("REISSUE");
-            resp!("")
+            resp!("27")
+        },
+        Some(CardCmd::REGISTER) => {
+            println!("REGISTER");
+            // Add user into database later
+            resp!(format!("1\n1,1\n{}",form.card_no))
         },
         _ => HttpResponse::NotFound().into()
     }
