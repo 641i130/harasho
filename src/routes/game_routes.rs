@@ -46,7 +46,7 @@ pub async fn game_stuff(body: web::Bytes, req: actix_web::HttpRequest) -> HttpRe
     println!("{}", &ct.red());
     println!("{}",format!("Plaintext:").black().on_green());
     let pt = aes_dec(&body);
-    let cleaned = &pt.trim().replace("\n", "").replace("\0", "");
+    let cleaned = &pt.trim().replace("\n", "").replace("\0", "").replace("\r", "");
     println!("{}", &cleaned.green());
      
     // Given the plaintext of the request body
@@ -65,4 +65,5 @@ pub async fn game_stuff(body: web::Bytes, req: actix_web::HttpRequest) -> HttpRe
             return resp!("");
         }
     }
-}
+// } 
+https://github.com/BocuD/LLServer/blob/2ab726cc298c613b5fa3d046ed95267c04486fd1/LLServer/Controllers/Game/GameController.cs
