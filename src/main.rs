@@ -29,6 +29,7 @@ use futures_util::future::FutureExt;
 // Modules
 mod routes;
 use crate::routes::game_routes::game_stuff;
+use crate::routes::card_routes::cardn;
 // AES
 mod cry;
 use crate::cry::aes::{aes_en, aes_dec};
@@ -74,6 +75,16 @@ async fn incomALL() -> HttpResponse {
     resp!("1+1")
 }
 
+#[post("/service/incom/incom.php")]
+async fn incom() -> HttpResponse {
+    resp!("1+1")
+}
+
+#[post("/service/incom/shop.php")]
+async fn shop() -> HttpResponse {
+    resp!("1+1")
+}
+
 #[post("/service/respone/respone.php")]
 async fn respone() -> HttpResponse {
     resp!("1")
@@ -102,53 +113,6 @@ async fn game_info() -> HttpResponse {
     println!("{:?}", String::from_utf8_lossy(&ciphertext));
     HttpResponse::Ok().append_header(ContentType::octet_stream()).body(ciphertext)
 }
-
-// Card Command Codes
-#[derive(Debug, Deserialize)]
-pub enum CardCmd {
-    READ = 256,
-    REGISTER = 512,
-    REISSUE = 1536,
-}
-
-impl CardCmd {
-    fn from_u16(cmd_str: u16) -> Option<Self> {
-        match cmd_str {
-            256 => Some(CardCmd::READ),
-            512 => Some(CardCmd::REGISTER),
-            1536 => Some(CardCmd::REISSUE),
-            _ => None, // Handle unknown values
-        }
-    }
-}
-
-#[derive(Debug, Deserialize)]
-pub struct CardVals {
-    cmd_str: u16, // Commands for card functions
-    card_no: u64, // Example: 7020392002385103
-}
-
-#[post("/service/card/cardn.cgi")]
-async fn cardn(web::Form(form): web::Form<CardVals>) -> HttpResponse {
-    dbg!(&form);
-    match CardCmd::from_u16(form.cmd_str) {
-        Some(CardCmd::READ) => {
-            println!("READ");
-            resp!(format!("1\n1,1\n{}",form.card_no))
-        },
-        Some(CardCmd::REISSUE) => {
-            println!("REISSUE");
-            resp!("27")
-        },
-        Some(CardCmd::REGISTER) => {
-            println!("REGISTER");
-            // Add user into database later
-            resp!(format!("1\n1,1\n{}",form.card_no))
-        },
-        _ => HttpResponse::NotFound().into()
-    }
-}
-
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Certify {
@@ -220,6 +184,8 @@ async fn main() -> std::io::Result<()> {
             .service(alive)
             .service(alive_i)
             .service(incomALL)
+            .service(incom)
+            .service(shop)
             .service(respone)
             .service(fire_alert)
             .service(cursel)
