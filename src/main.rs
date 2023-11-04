@@ -42,6 +42,22 @@ macro_rules! resp {
     };
 }
 
+#[post("/basicinfo/")]
+async fn basicinfo_e() -> HttpResponse {
+    // This function is technically decrypting the plaintext into cipher text for the client to
+    // encrypt to read it. It's very backwards, but this is how the game works. I hate it.
+    let mut key_file = File::open("private_key.pem").unwrap();
+    let mut key_buffer = Vec::new();
+    key_file.read_to_end(&mut key_buffer).unwrap();
+    // Load the private key from the PEM data
+    let rsa = Rsa::private_key_from_pem(&key_buffer).unwrap();
+    let plaintext = r#"{"result":200,"response":{"base_url":"http://data.nesys.jp/game","download_url":"http://data.nesys.jp/download","key":"01234567890123456789012345678901","iv":"0123456789012345","tenpo_index":1337}}"#;
+    let mut ciphertext = vec![0; rsa.size() as usize];
+    rsa.private_encrypt(plaintext.as_bytes(), &mut ciphertext, Padding::PKCS1).unwrap();
+    println!("{}",format!("RSA Public Encrypt").bold().red());
+    println!("{}",format!("{}", plaintext).bold().yellow());
+    HttpResponse::Ok().append_header(ContentType::octet_stream()).body(ciphertext)
+}
 
 #[post("/basicinfo")]
 async fn basicinfo() -> HttpResponse {
@@ -195,6 +211,7 @@ async fn main() -> std::io::Result<()> {
             .service(certify)
             .service(server_data)
             .service(basicinfo)
+            .service(basicinfo_e)
             .service(cardn)
             //.service(web::resource("/*").route(web::post().to(handle_post_request)))
             .route("{path:.*}",web::post().to(handle_post_request))

@@ -2,6 +2,7 @@ use colored::Colorize;
 use actix_web::{web, HttpResponse, dev::Service, dev::ServiceRequest, dev::ServiceResponse, Error, Result, get, http::header::ContentType, post, App, HttpRequest, HttpServer};
 // AES
 use crate::cry::aes::{aes_en, aes_dec};
+use serde::Deserialize;
 
 macro_rules! resp {
     ($str:expr) => {
@@ -9,10 +10,7 @@ macro_rules! resp {
         HttpResponse::Ok().append_header(ContentType::octet_stream()).body($str)
     };
 }
-
 ///////////////////////////////////////////////////////////////////////////////////////////
-use serde::Deserialize;
-
 
 // Card Command Codes
 #[derive(Debug, Deserialize)]
