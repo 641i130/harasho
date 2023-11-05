@@ -37,18 +37,24 @@ struct Terminal {
     terminal_attrib: i32,
     terminal_id: String,
 }
-
+fn clean_json_string(input: &str) -> String {
+    // Remove whitespace characters, including line breaks and extra spaces
+    let cleaned_str = input
+        .chars()
+        .filter(|c| !c.is_control() || c == &'\n' || c == &'\r')
+        .collect();    
+    cleaned_str
+}
 #[post("/game")]
 pub async fn game_stuff(body: web::Bytes, req: actix_web::HttpRequest) -> HttpResponse {
     // For getting the game online, we need to give it a json type encrypted!
-    let ct = String::from_utf8_lossy(&body).trim().replace("\n", "").replace("\0", "");
+    let ct = String::from_utf8_lossy(&body).trim().replace("\n", "").replace("\0", "").replace("\r","").replace("\t","");
     println!("{}",format!("Ciphertext:").black().on_red());
     println!("{}", &ct.red());
     println!("{}",format!("Plaintext:").black().on_green());
     let pt = aes_dec(&body);
-    let cleaned = &pt.trim().replace("\n", "").replace("\0", "").replace("\r", "");
+    let cleaned = clean_json_string(&pt).replace("\n","");
     println!("{}", &cleaned.green());
-     
     // Given the plaintext of the request body
     // Attempt to deserialize the JSON into your custom struct
     match serde_json::from_str::<GameData>(&cleaned) {
@@ -65,5 +71,4 @@ pub async fn game_stuff(body: web::Bytes, req: actix_web::HttpRequest) -> HttpRe
             return resp!("");
         }
     }
-// } 
-https://github.com/BocuD/LLServer/blob/2ab726cc298c613b5fa3d046ed95267c04486fd1/LLServer/Controllers/Game/GameController.cs
+} 

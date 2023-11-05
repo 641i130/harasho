@@ -60,6 +60,7 @@ async fn basicinfo() -> HttpResponse {
 
 #[get("/alive/{id}/Alive.txt")]
 async fn alive(id: web::Path<String>, req: actix_web::HttpRequest) -> HttpResponse {
+    println!("{}",format!("[+] Game started!").green());
     resp!("")
 }
 
@@ -85,7 +86,7 @@ async fn shop() -> HttpResponse {
 
 #[post("/service/respone/respone.php")]
 async fn respone() -> HttpResponse {
-    println!("[+] Machine started nesys service!");
+    println!("{}",format!("[+] Nesys service started!").green());
     resp!("1")
 }
 
@@ -124,6 +125,7 @@ pub struct Certify {
 
 #[get("/server/certify.php")]
 async fn certify() -> HttpResponse {
+    println!("{}",format!("[+] Certificates validated!").green());
     //async fn certify(data: web::Query<Certify>, req: HttpRequest) -> HttpResponse {
     /*
     dbg!(&data);
