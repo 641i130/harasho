@@ -10,6 +10,11 @@ macro_rules! resp {
     };
 }
 
+pub fn encresp(content: &str) -> HttpResponse {
+    let encrypted_content = aes_en(&content); // Encrypt the content.
+    resp!(encrypted_content) // Use your macro here, if it can be adapted to work with Vec<u8>
+}
+
 ///////////////////////////////////////////////////////////////////////////////////////////
 use serde::Deserialize;
 
@@ -45,6 +50,9 @@ fn clean_json_string(input: &str) -> String {
         .collect();    
     cleaned_str
 }
+
+// {'result':200,'encresponse':{}}
+
 #[post("/game")]
 pub async fn game_stuff(body: web::Bytes, req: actix_web::HttpRequest) -> HttpResponse {
     // For getting the game online, we need to give it a json type encrypted!
@@ -61,14 +69,53 @@ pub async fn game_stuff(body: web::Bytes, req: actix_web::HttpRequest) -> HttpRe
         Ok(data) => {
             // You can now work with the deserialized data
             println!("{}",format!("data.protocol -> {}", data.protocol).black().bold().on_magenta());
-            // Respond with success or any other logic you need
-            return resp!("");
+            match data.protocol.as_str() {
+                "unlock" => return encresp("{'result':200,'response':{}}"), // 1st
+                "gameconfig" => return encresp("{'result':400,'response':{}}"), // 2nd -> not getting the right data???
+                "information" => return encresp("{'result':400,'response':{}}"), // 3rd
+                "ranking" => return encresp("{'result':200,'response':{}}"), // 4th
+                "auth" => return encresp("{'result':200,'response':{}}"),
+                "achievement" => return encresp("{'result':200,'response':{}}"),
+                "achievementyell" => return encresp("{'result':200,'response':{}}"),
+                "checkword" => return encresp("{'result':200,'response':{}}"),
+                "discard" => return encresp("{'result':200,'response':{}}"),
+                "gacha.member" => return encresp("{'result':200,'response':{}}"),
+                "gameentry" => return encresp("{'result':200,'response':{}}"),
+                "gameentry.center" => return encresp("{'result':200,'response':{}}"),
+                "gameresult" => return encresp("{'result':200,'response':{}}"),
+                "gametotalresult" => return encresp("{'result':200,'response':{}}"),
+                "gameexit" => return encresp("{'result':200,'response':{}}"),
+                "getmembercard" => return encresp("{'result':200,'response':{}}"),
+                "music.unlock" => return encresp("{'result':200,'response':{}}"),
+                "present" => return encresp("{'result':200,'response':{}}"),
+                "printcard" => return encresp("{'result':200,'response':{}}"),
+                "profile.inquiry" => return encresp("{'result':200,'response':{}}"),
+                "profile.print" => return encresp("{'result':200,'response':{}}"),
+                "userranking" => return encresp("{'result':200,'response':{}}"),
+                "registerafter" => return encresp("{'result':200,'response':{}}"),
+                "scfescheck" => return encresp("{'result':200,'response':{}}"),
+                "scfesregister" => return encresp("{'result':200,'response':{}}"),
+                "sellcard" => return encresp("{'result':200,'response':{}}"),
+                "setterminallog" => return encresp("{'result':200,'response':{}}"),
+                "setterminalstatus" => return encresp("{'result':200,'response':{}}"),
+                "travelstamp" => return encresp("{'result':200,'response':{}}"),
+                "TravelStart" => return encresp("{'result':200,'response':{}}"),
+                "TravelResult" => return encresp("{'result':200,'response':{}}"),
+                "TravelSnap.commit" => return encresp("{'result':200,'response':{}}"),
+                "TravelSnap.inquiry" => return encresp("{'result':200,'response':{}}"),
+                "TravelSnap.share" => return encresp("{'result':200,'response':{}}"),
+                "TravelSnap.print" => return encresp("{'result':200,'response':{}}"),
+                "userdata.get" => return encresp("{'result':200,'response':{}}"),
+                "userdata.initialize" => return encresp("{'result':200,'response':{}}"),
+                "userdata.set" => return encresp("{'result':200,'response':{}}"),
+                _ => return encresp("{'result':400,'response':{}}"),
+            }
         },
         Err(err) => {
             // Handle deserialization error
             println!("Deserialization error: {}", err);
-            // Respond with a JSON error message or other appropriate response
-            return resp!("");
+            // encrespond with a JSON error message or other appropriate response
+            return encresp("{'result':400,'response':{}}");
         }
     }
 } 
