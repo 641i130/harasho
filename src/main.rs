@@ -196,7 +196,7 @@ async fn main() -> std::io::Result<()> {
             .service(certify)
             .service(server_data)
             .service(web::resource("/basicinfo/").to(basicinfo))
-            .service(web::resource("/basicinfo").to(basicinfo))
+            //.service(web::resource("/basicinfo").to(basicinfo))
             .service(cardn)
             //.service(web::resource("/*").route(web::post().to(handle_post_request)))
             .route("{path:.*}",web::post().to(handle_post_request))

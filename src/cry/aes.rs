@@ -15,8 +15,8 @@ pub fn aes_en(plaintext: &&str) -> Vec<u8> {
     
     // Now we need to pad it TO BAD I HAD TO IMPLEMENT PKCS#7 in here lmao
     // PKCS#7 padding... too lazy to get a library to do this and the ones I have don't...?
-    let block_size = 16;
-    let padder = block_size - (ciphertext.len() % block_size);
+    let block_size = 16; // blocks of 4 bytes
+    let padder = block_size - (ciphertext.len() % block_size); // The size of the blocks to add is the value to use 
     let padding = vec![padder as u8; padder];
     let mut padded_data = Vec::from(ciphertext);
     padded_data.extend(padding);
